@@ -295,8 +295,8 @@ export default function InstructorPage() {
       <nav className="role-switch" aria-label="학생·교수자 화면 전환">
         {/* Native anchors avoid broken RSC prefetch in the static Vercel export. */}
         {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
-        <a className="role-switch-option" href="/">학생</a>
-        <a className="role-switch-option active" href="/instructor" aria-current="page">교수자</a>
+        <a className="role-switch-option" href="/" onClick={(event) => { event.preventDefault(); window.location.assign("/"); }}>학생</a>
+        <a className="role-switch-option active" href="/instructor" aria-current="page" onClick={(event) => { event.preventDefault(); window.location.assign("/instructor"); }}>교수자</a>
       </nav>
       <aside className="instructor-sidebar" aria-label="교수자 과제와 학생 탐색">
         <div>

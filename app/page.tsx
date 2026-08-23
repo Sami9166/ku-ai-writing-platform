@@ -360,8 +360,8 @@ export default function Home() {
       <nav className="role-switch" aria-label="학생·교수자 화면 전환">
         {/* Native anchors avoid broken RSC prefetch in the static Vercel export. */}
         {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
-        <a className="role-switch-option active" href="/" aria-current="page">학생</a>
-        <a className="role-switch-option" href="/instructor">교수자</a>
+        <a className="role-switch-option active" href="/" aria-current="page" onClick={(event) => { event.preventDefault(); window.location.assign("/"); }}>학생</a>
+        <a className="role-switch-option" href="/instructor" onClick={(event) => { event.preventDefault(); window.location.assign("/instructor"); }}>교수자</a>
       </nav>
       <aside className="sidebar" aria-label="과제 탐색">
         <div>
