@@ -1,7 +1,6 @@
 "use client";
 
 import { FormEvent, MouseEvent, useEffect, useRef, useState } from "react";
-import Link from "next/link";
 import { apiFetch } from "./api";
 import { renderPlainText } from "./plain-text";
 
@@ -359,8 +358,10 @@ export default function Home() {
   return (
     <main className="workspace">
       <nav className="role-switch" aria-label="학생·교수자 화면 전환">
-        <Link className="role-switch-option active" href="/" aria-current="page">학생</Link>
-        <Link className="role-switch-option" href="/instructor">교수자</Link>
+        {/* Native anchors avoid broken RSC prefetch in the static Vercel export. */}
+        {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
+        <a className="role-switch-option active" href="/" aria-current="page">학생</a>
+        <a className="role-switch-option" href="/instructor">교수자</a>
       </nav>
       <aside className="sidebar" aria-label="과제 탐색">
         <div>
