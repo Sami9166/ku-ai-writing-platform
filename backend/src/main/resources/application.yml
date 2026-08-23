@@ -1,0 +1,31 @@
+server:
+  port: ${API_PORT:4000}
+spring:
+  application:
+    name: ku-ai-writing-api
+  jackson:
+    default-property-inclusion: non_null
+  datasource:
+    url: ${DB_URL:jdbc:mysql://localhost:3306/ku_ai_trace?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Seoul&allowPublicKeyRetrieval=true&useSSL=false}
+    username: ${DB_USERNAME:ku_ai}
+    password: ${DB_PASSWORD:ku_ai_local}
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+ku:
+  assignment-id: ${ASSIGNMENT_ID:1}
+  groq:
+    api-key: ${GROQ_API_KEY:}
+    dotenv-enabled: ${GROQ_DOTENV_ENABLED:true}
+    student-model: ${STUDENT_MODEL:}
+    rubric-model: ${PROFESSOR_MODEL:}
+  google:
+    api-key: ${GOOGLE_API_KEY:}
+  professor:
+    provider: ${PROFESSOR_PROVIDER:}
+  search:
+    enabled: ${SEARCH_ENABLED:true}
+    endpoint: ${SEARCH_API_URL:http://localhost:8080/search}

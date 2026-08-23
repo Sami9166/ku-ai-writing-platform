@@ -1,0 +1,42 @@
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: ku-ai-trace-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ku_ai_trace
+      MYSQL_USER: ku_ai
+      MYSQL_PASSWORD: ku_ai_local
+      MYSQL_ROOT_PASSWORD: ku_ai_root_local
+      TZ: Asia/Seoul
+    ports:
+      - "127.0.0.1:3306:3306"
+    volumes:
+      - ku_ai_mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uku_ai", "-pku_ai_local"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  searxng:
+    image: searxng/searxng:latest
+    container_name: ku-ai-trace-searxng
+    restart: unless-stopped
+    environment:
+      BASE_URL: http://localhost:8080/
+      INSTANCE_NAME: ku-ai-trace
+    ports:
+      - "127.0.0.1:8080:8080"
+    volumes:
+      - ./searxng:/etc/searxng
+      - ku_ai_searxng_cache:/var/cache/searxng
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/search?q=healthcheck&format=json', timeout=3)\" || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+
+volumes:
+  ku_ai_mysql_data:
+  ku_ai_searxng_cache:
