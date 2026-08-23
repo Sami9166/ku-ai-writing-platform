@@ -1,8 +1,13 @@
 type ApiOptions = Omit<RequestInit, "body"> & { body?: unknown };
 
 const configuredApiBase = typeof process !== "undefined" ? process.env.NEXT_PUBLIC_API_URL : undefined;
-const browserApiBase = typeof window !== "undefined" ? `${window.location.protocol}//${window.location.hostname}:4000` : "http://localhost:4000";
-const apiBase = configuredApiBase || browserApiBase;
+const browserApiBase =
+  typeof window !== "undefined"
+    ? window.location.protocol === "https:"
+      ? ""
+      : `${window.location.protocol}//${window.location.hostname}:4000`
+    : "http://localhost:4000";
+const apiBase = configuredApiBase ?? browserApiBase;
 
 export async function apiFetch<T>(path: string, options: ApiOptions = {}): Promise<T | null> {
   try {

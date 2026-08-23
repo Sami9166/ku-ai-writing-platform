@@ -2,5 +2,11 @@
   "framework": null,
   "buildCommand": "npm run build",
   "outputDirectory": "dist/client",
-  "cleanUrls": true
+  "cleanUrls": true,
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "http://3.35.69.70:4000/api/:path*"
+    }
+  ]
 }
