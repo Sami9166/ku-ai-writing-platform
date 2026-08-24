@@ -25,7 +25,14 @@ import java.util.regex.Pattern;
 
 @RestController
 @RequestMapping("/api")
-@CrossOrigin(origins = {"http://localhost:3000", "http://localhost:5173", "http://127.0.0.1:3000", "http://127.0.0.1:5173"})
+@CrossOrigin(origins = {
+    "http://localhost:3000",
+    "http://localhost:5173",
+    "http://127.0.0.1:3000",
+    "http://127.0.0.1:5173",
+    "https://ku-ai-writing-platform.vercel.app",
+    "https://ku-ai-writing-platform-git-main-ksm031216-4819s-projects.vercel.app"
+})
 public class PlatformController {
     private static final List<String> RUBRIC_IDS = List.of("initiative", "prompt", "critical", "creative", "transparent");
     private static final Map<String, String> RUBRIC_LABELS = Map.of(
