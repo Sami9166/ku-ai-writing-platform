@@ -40,6 +40,19 @@ type ExplorationRecord = {
 
 type ConversationMessage = { role: string; text: string };
 
+type FallbackTurn = {
+  question: string;
+  answer: string;
+};
+
+type FallbackProfile = {
+  rates: Record<RubricId, number>;
+  turns: FallbackTurn[];
+  records: ExplorationRecord[];
+  submission: string;
+  submittedAt: string;
+};
+
 type StudentSummary = {
   assignment?: Assignment;
   rubrics?: Partial<Record<RubricId, Rubric>>;
@@ -88,6 +101,399 @@ const fallbackAssignmentsWithDueDates = fallbackAssignments.map((assignment) => 
   dueAt: fallbackAssignmentDueDates[assignment.id],
 }));
 
+const fallbackProfiles: Record<string, FallbackProfile> = {
+  "2022000001": {
+    rates: { initiative: 25, prompt: 25, critical: 50, creative: 33, transparent: 0 },
+    turns: [
+      {
+        question: "AI 활용이 필요하다고 생각해. {{topic}}의 핵심 쟁점을 한 문단으로 정리해줘.",
+        answer: "{{topic}}에서는 AI를 빠르게 쓰는 것보다 활용 목적과 확인할 근거를 정하는 일이 먼저입니다.",
+      },
+      {
+        question: "좋아. 교과목 확대가 실제로 운영되는지 직접 검색할 키워드와 확인 순서를 알려줘.",
+        answer: "대학 공식 홈페이지와 교육과정 공지를 먼저 찾아 교과목명, 운영 시기, 대상 전공을 차례로 확인해 보세요.",
+      },
+    ],
+    records: [
+      {
+        id: "fallback-2022000001-verify-1",
+        verdict: "확인 필요",
+        method: "직접 검색하기",
+        reason: "교과목 확대가 실제 운영되는지 공식 자료로 확인하고 싶음",
+        sentence: "{{topic}}에서 AI 교과목 확대가 필요하다는 주장은 운영 자료를 확인해야 한다.",
+        executed: true,
+      },
+      {
+        id: "fallback-2022000001-revise-1",
+        verdict: "수정 필요",
+        method: "선택하지 않음",
+        reason: "주장이 짧아 근거와 활용 범위를 보완해야 함",
+        sentence: "AI 활용이 필요하다.",
+        executed: false,
+      },
+    ],
+    submission: "AI 교육 확대가 필요하다. 자료를 정리하는 데 AI를 활용했지만, 실제 운영 여부는 공식 자료로 확인한 뒤 최종 주장을 직접 작성했다.",
+    submittedAt: "2026-08-08T14:58:00Z",
+  },
+  "2023000002": {
+    rates: { initiative: 50, prompt: 75, critical: 33, creative: 33, transparent: 33 },
+    turns: [
+      {
+        question: "고려대 AI 교육에 관해 글을 쓰고 싶어. {{topic}}에서 실습이 필요한 이유를 설명해줘.",
+        answer: "실습은 AI 개념을 실제 문제에 적용하고 결과를 검토하는 경험을 제공한다는 점에서 의미가 있습니다.",
+      },
+      {
+        question: "이 답변의 근거는 무엇인지 참고 문헌으로 확인하려고 해. 확인할 자료 유형을 나눠줘.",
+        answer: "교육과정 공지, 수업 운영 사례, 연구 보고서를 나누어 확인하고 자료의 발행 기관과 시점을 기록하세요.",
+      },
+      {
+        question: "학생 입장에서 주장과 근거를 800자 보고서 형식으로 다시 정리해줘.",
+        answer: "주장, 확인한 근거, 한계와 제안의 순서로 구성하면 짧은 보고서에서도 관점이 분명해집니다.",
+      },
+    ],
+    records: [
+      {
+        id: "fallback-2023000002-verify-1",
+        verdict: "확인 필요",
+        method: "참고 문헌 확인하기",
+        reason: "실습 중심 교육의 실제 사례가 있는지 확인해야 함",
+        sentence: "실습 수업이 학습 성과를 높인다는 표현은 연구 보고서로 확인할 필요가 있다.",
+        executed: false,
+      },
+      {
+        id: "fallback-2023000002-verify-2",
+        verdict: "확인 필요",
+        method: "참고 문헌 확인하기",
+        reason: "학생 관점의 주장과 자료의 범위를 구분하고 싶음",
+        sentence: "{{topic}}의 개선 방향은 수업 운영 사례와 학생 경험을 함께 비교해야 한다.",
+        executed: true,
+      },
+    ],
+    submission: "나는 고려대학교의 AI 교육에 실습이 더 필요하다고 본다. AI는 자료 구조화에 활용했고, 교육과정 공지와 연구 보고서를 비교해 주장과 근거를 나누어 작성했다.",
+    submittedAt: "2026-08-08T14:55:00Z",
+  },
+  "2022000003": {
+    rates: { initiative: 67, prompt: 75, critical: 67, creative: 67, transparent: 33 },
+    turns: [
+      {
+        question: "과제 주제는 고려대 AI 교육이야. {{topic}}의 배경과 핵심 문제를 정리해줘.",
+        answer: "대학의 AI 교육은 전공별 기초 역량과 실제 적용 경험을 함께 제공해야 한다는 문제의식에서 출발할 수 있습니다.",
+      },
+      {
+        question: "결과를 분량 800자 보고서 형식으로 바꿔야 할까? 학생의 주장과 근거가 보이게 구성해줘.",
+        answer: "800자라면 배경 한 문장, 자신의 주장 두 문장, 확인한 근거와 한계, 제안 순서가 적절합니다.",
+      },
+      {
+        question: "반대 관점에서는 어떤 우려를 제기할 수 있어? 내 주장과 함께 비교해줘.",
+        answer: "AI 교육 확대의 속도와 비용, 전공별 격차를 우려하는 관점을 함께 제시하면 논지가 균형을 얻습니다.",
+      },
+      {
+        question: "마지막 문단은 내가 직접 쓴 것처럼 너무 과장되지 않게 다시 다듬어줘.",
+        answer: "확인한 사실과 제안의 범위를 구분하고, 단정 대신 조건을 붙여 자신의 판단을 드러내 보세요.",
+      },
+    ],
+    records: [
+      {
+        id: "fallback-2022000003-verify-1",
+        verdict: "확인 필요",
+        method: "직접 검색하기",
+        reason: "교육 현황을 설명하는 수치와 사례의 최신성을 확인하고 싶음",
+        sentence: "고려대학교의 AI 교육 현황은 최근 교육과정과 공식 발표를 기준으로 확인해야 한다.",
+        executed: true,
+      },
+      {
+        id: "fallback-2022000003-revise-1",
+        verdict: "수정 필요",
+        method: "AI에게 추가 질문하기",
+        reason: "확대의 장점만 있어 비용과 전공 격차를 함께 반영해야 함",
+        sentence: "AI 교육을 확대하면 모든 전공의 학습 성과가 높아진다.",
+        executed: true,
+      },
+      {
+        id: "fallback-2022000003-verify-2",
+        verdict: "확인 필요",
+        method: "참고 문헌 확인하기",
+        reason: "제안과 사실 설명을 구분해 참고 문헌을 남기고 싶음",
+        sentence: "전공 간 수업을 넓히려면 실제 운영 사례와 참여 조건을 함께 살펴봐야 한다.",
+        executed: true,
+      },
+    ],
+    submission: "내 관점에서는 전공 간 수업을 먼저 넓혀야 한다. 따라서 프로젝트 경험을 함께 늘려야 한다. AI로 쟁점을 정리한 뒤 교육과정 자료와 반대 사례를 확인하고 문장을 직접 재구성했다.",
+    submittedAt: "2026-08-08T14:50:00Z",
+  },
+  "2024000004": {
+    rates: { initiative: 50, prompt: 50, critical: 33, creative: 67, transparent: 67 },
+    turns: [
+      {
+        question: "학생 대상 발표문을 만들고 싶어. {{topic}}의 배경을 쉽게 설명해줘.",
+        answer: "학생 발표라면 AI가 왜 필요한지와 대학에서 어떤 경험을 제공할 수 있는지를 먼저 설명하면 좋습니다.",
+      },
+      {
+        question: "결과물 조건을 다르게 정리해줄 수 있어? 3분 발표에 맞춰 핵심만 남겨줘.",
+        answer: "도입 30초, 현황과 사례 1분, 기대와 우려 1분, 제안 30초로 나누면 전달하기 쉽습니다.",
+      },
+    ],
+    records: [
+      {
+        id: "fallback-2024000004-verify-1",
+        verdict: "확인 필요",
+        method: "직접 검색하기",
+        reason: "발표에 넣을 사례가 실제 프로그램인지 확인해야 함",
+        sentence: "학생 대상 AI 프로젝트가 실제로 운영되고 있는지 공식 안내에서 확인해야 한다.",
+        executed: false,
+      },
+      {
+        id: "fallback-2024000004-revise-1",
+        verdict: "수정 필요",
+        method: "선택하지 않음",
+        reason: "발표 시간에 맞게 설명의 범위를 줄일 필요가 있음",
+        sentence: "AI 교육은 다양한 장점이 있으므로 모든 내용을 발표에 넣어야 한다.",
+        executed: false,
+      },
+    ],
+    submission: "나의 관점에서 AI를 참고해 고려대학교의 교육은 실습 중심으로 바뀌어야 한다. 전공 간 수업을 연결하고 실제 문제를 해결하는 프로젝트를 늘리자는 제안을 3분 발표문으로 재구성했다.",
+    submittedAt: "2026-08-08T14:57:00Z",
+  },
+  "2022000005": {
+    rates: { initiative: 67, prompt: 100, critical: 33, creative: 67, transparent: 100 },
+    turns: [
+      {
+        question: "고려대학교 AI 연구 주제의 발표를 작성해줘. 대상은 1학년이고 분량은 500자야.",
+        answer: "1학년 발표라면 연구 주제를 쉬운 말로 소개하고, 어떤 문제를 해결하는지와 학생에게 필요한 태도를 연결해 보세요.",
+      },
+      {
+        question: "산학협력 사례가 부족해. 다른 근거로 수정해줘.",
+        answer: "산학협력 대신 교과목 운영, 학생 프로젝트, 연구실 공개 자료처럼 확인 가능한 근거를 중심으로 다시 구성할 수 있습니다.",
+      },
+      {
+        question: "자료를 그대로 옮기지 않고 내 주장과 한계를 500자 안에 넣어줘.",
+        answer: "자료의 사실 설명과 자신의 판단을 문단별로 나누고, 확인하지 못한 부분은 한계로 명시하세요.",
+      },
+    ],
+    records: [
+      {
+        id: "fallback-2022000005-verify-1",
+        verdict: "확인 필요",
+        method: "참고 문헌 확인하기",
+        reason: "산학협력 성과를 다른 공식 근거로 대체하고 싶음",
+        sentence: "교과목 운영과 학생 프로젝트 자료가 산학협력 성과를 대신할 수 있는지 확인해야 한다.",
+        executed: false,
+      },
+      {
+        id: "fallback-2022000005-revise-1",
+        verdict: "수정 필요",
+        method: "AI에게 추가 질문하기",
+        reason: "발표 대상에 맞지 않는 전문 용어를 줄여야 함",
+        sentence: "AI 연구를 설명할 때 전문 용어를 많이 넣을수록 설득력이 높아진다.",
+        executed: true,
+      },
+      {
+        id: "fallback-2022000005-verify-2",
+        verdict: "확인 필요",
+        method: "직접 검색하기",
+        reason: "최종 문단의 사례 출처를 다시 대조함",
+        sentence: "학생 프로젝트 사례의 운영 시기와 참여 조건은 원문 공지에서 대조해야 한다.",
+        executed: true,
+      },
+    ],
+    submission: "나의 관점에서 AI 사용은 자료를 정리하는 데 도움이 되지만, 사용 목적은 논점을 구조화하고 검토할 질문을 찾는 데 있다. 확인한 자료와 내 결론을 구분해 500자 발표문으로 작성했다.",
+    submittedAt: "2026-08-08T14:52:00Z",
+  },
+  "2021000006": {
+    rates: { initiative: 0, prompt: 25, critical: 0, creative: 0, transparent: 33 },
+    turns: [
+      {
+        question: "AI 서비스.",
+        answer: "{{topic}}에서 AI 서비스를 다룬다면 먼저 어떤 문제를 해결하려는지와 사용자를 정해 보는 것이 좋습니다.",
+      },
+    ],
+    records: [
+      {
+        id: "fallback-2021000006-revise-1",
+        verdict: "수정 필요",
+        method: "선택하지 않음",
+        reason: "질문만으로는 과제 목적과 근거가 드러나지 않음",
+        sentence: "AI 서비스.",
+        executed: false,
+      },
+    ],
+    submission: "나는 생성형 AI를 사용했다. 사용 목적은 자료 구조화다. 활용 범위는 아이디어 정리까지이며, 최종 글은 직접 작성했다.",
+    submittedAt: "2026-08-08T14:59:00Z",
+  },
+  "2022000007": {
+    rates: { initiative: 100, prompt: 75, critical: 67, creative: 33, transparent: 67 },
+    turns: [
+      {
+        question: "나는 고려대학교 AI 교육 과제의 문제를 분석하고 싶어. 현재 배경과 결론 조건을 정리해줘.",
+        answer: "배경은 대학 AI 교육의 확산으로, 결론은 실제 운영 근거와 학생 관점의 제안이 함께 있어야 한다는 조건으로 정리할 수 있습니다.",
+      },
+      {
+        question: "내 주장과 반대되는 사례도 추가해서 방향을 바꿔볼래?",
+        answer: "확대에 따른 비용과 접근성 격차를 반대 사례로 넣고, 모든 전공에 같은 방식이 적합한지 비교해 보세요.",
+      },
+      {
+        question: "반대 사례를 확인할 검색어와 문헌 기준을 제안해줘.",
+        answer: "대학 AI 교육 격차, 수업 접근성, 전공별 프로젝트 참여 조건을 검색어로 삼고 발행 기관과 조사 대상을 기록하세요.",
+      },
+      {
+        question: "이제 내 결론을 조건부 주장으로 다시 써줘.",
+        answer: "기초 교육과 참여 조건을 함께 마련한다면 전공 간 AI 프로젝트를 단계적으로 확대할 수 있다는 식으로 정리해 보세요.",
+      },
+    ],
+    records: [
+      {
+        id: "fallback-2022000007-verify-1",
+        verdict: "확인 필요",
+        method: "직접 검색하기",
+        reason: "AI 교육 격차에 관한 반대 사례를 찾아 주장의 범위를 조정함",
+        sentence: "모든 전공에 같은 AI 수업을 적용할 때 참여 조건의 차이를 확인해야 한다.",
+        executed: true,
+      },
+      {
+        id: "fallback-2022000007-revise-1",
+        verdict: "수정 필요",
+        method: "AI에게 추가 질문하기",
+        reason: "확대의 장점만 말하지 않고 비용과 접근성 문제를 반영함",
+        sentence: "AI 교육 확대는 언제나 모든 학생에게 같은 효과를 준다.",
+        executed: true,
+      },
+      {
+        id: "fallback-2022000007-verify-2",
+        verdict: "확인 필요",
+        method: "참고 문헌 확인하기",
+        reason: "조건부 결론을 뒷받침할 조사 대상을 확인해야 함",
+        sentence: "전공별 프로젝트 참여 조건이 실제 학생 경험에 어떤 차이를 만드는지 살펴봐야 한다.",
+        executed: false,
+      },
+    ],
+    submission: "내 주장으로는 AI를 자료 구조화에 사용하되, 사용 목적은 쟁점 정리로 제한해야 한다. 실제 사례의 타당성은 학생이 직접 검토하고, 전공별 참여 조건을 고려해 단계적으로 확대해야 한다.",
+    submittedAt: "2026-08-08T14:54:00Z",
+  },
+  "2025000008": {
+    rates: { initiative: 50, prompt: 50, critical: 67, creative: 33, transparent: 33 },
+    turns: [
+      {
+        question: "과제에서 고려대 AI 교육 개선안을 작성하려고 해. 전공생 30명을 대상으로 700자 이내 제안서 형식이 필요해.",
+        answer: "대상, 분량, 형식을 정했으니 학생이 겪는 문제와 실현 가능한 개선안 두 가지를 중심으로 구성해 보세요.",
+      },
+      {
+        question: "좋아, 이대로 둘게. 그래도 제안서의 근거가 될 자료를 한 번만 확인해줘.",
+        answer: "공식 교육과정, 학생 지원 프로그램, 공개된 운영 결과를 확인하고 자료의 날짜와 범위를 제안서에 남기세요.",
+      },
+    ],
+    records: [
+      {
+        id: "fallback-2025000008-verify-1",
+        verdict: "확인 필요",
+        method: "직접 검색하기",
+        reason: "제안서의 대상과 운영 조건을 확인해야 함",
+        sentence: "전공생 30명을 대상으로 한 AI 교육 개선안은 실제 지원 프로그램과 연결해 검토해야 한다.",
+        executed: true,
+      },
+      {
+        id: "fallback-2025000008-revise-1",
+        verdict: "수정 필요",
+        method: "선택하지 않음",
+        reason: "제안은 있으나 자신의 사용 범위와 한계가 짧게 드러남",
+        sentence: "AI를 참고해 고려대학교의 교육 방향을 간단히 정리했다.",
+        executed: false,
+      },
+    ],
+    submission: "AI를 참고해 고려대학교의 교육 방향을 간단히 정리했다. 제안서의 구조를 잡는 데만 활용했고, 운영 조건과 근거 자료는 직접 확인했다.",
+    submittedAt: "2026-08-08T14:56:00Z",
+  },
+  "2022000009": {
+    rates: { initiative: 33, prompt: 25, critical: 67, creative: 33, transparent: 33 },
+    turns: [
+      {
+        question: "고려대 AI 교육 현황을 조사해봐",
+        answer: "검색 결과가 없어요. 질문의 범위나 시점을 조금 더 구체적으로 입력해 다시 시도해 주세요.",
+      },
+      {
+        question: "고려대 AI 교육 현황을 조사해서 링크와 함꼐 보내줘",
+        answer: "AI 답변을 과제에 활용할 때는 필요한 핵심만 골라 자신의 관점과 근거를 더해 정리해 보세요. 질문에 목적, 배경, 원하는 형식을 함께 적으면 다음 답변도 더 구체적으로 받을 수 있습니다.",
+      },
+      {
+        question: "고려대 AI 교육 현황이 어떻게 되지?",
+        answer: "AI 답변을 과제에 활용할 때는 필요한 핵심만 골라 자신의 관점과 근거를 더해 정리해 보세요. 질문에 목적, 배경, 원하는 형식을 함께 적으면 다음 답변도 더 구체적으로 받을 수 있습니다.",
+      },
+    ],
+    records: [
+      {
+        id: "fallback-2022000009-verify-1",
+        verdict: "확인 필요",
+        method: "직접 검색하기",
+        reason: "사실 여부가 불확실함",
+        sentence: "AI가 제안하는 기능은 대부분 실제 사용자 검증 없이는 높은 정확도를 보장하므로 별도의 검증 과정이 필요합니다.",
+        executed: true,
+      },
+      {
+        id: "fallback-2022000009-revise-1",
+        verdict: "수정 필요",
+        method: "선택하지 않음",
+        reason: "논리적 오류 또는 비약이 있음",
+        sentence: "AI 활용 교육은 기술 사용법만 익히는 것이 아니라, 근거를 확인하고 자신의 관점으로 재구성하는 과정까지 포함해야 합니다.",
+        executed: false,
+      },
+      {
+        id: "fallback-2022000009-verify-2",
+        verdict: "확인 필요",
+        method: "직접 검색하기",
+        reason: "근거를 한 번 더 확인해 보고 싶습니다.",
+        sentence: "AI 교육을 도입하기 전 가장 먼저 고민해야 할 점은 목표와 활용 범위야. 기대되는 점과 걱정되는 점을 나누어 검토해야 한다.",
+        executed: true,
+      },
+    ],
+    submission: "고려대학교의 AI 발전은 기술을 많이 도입하는 데서 끝나지 않고, 학생들이 직접 질문하고 결과를 검증하는 경험을 늘리는 방향이어야 한다. 기대되는 점은 전공과 상관없이 연구 자료를 빠르게 탐색하고 아이디어를 구체화할 수 있다는 것이다. 다만 답변을 그대로 믿으면 전공별 맥락과 책임이 빠질 수 있으므로, 수업에서는 출처 확인과 토론을 함께 다뤄야 한다.",
+    submittedAt: "2026-08-08T14:59:59Z",
+  },
+  "2022000010": {
+    rates: { initiative: 67, prompt: 75, critical: 33, creative: 67, transparent: 67 },
+    turns: [
+      {
+        question: "고려대 AI 교육 과제의 개선 방향을 알고 싶어. 논지와 근거를 분리해줘.",
+        answer: "논지는 교육에 근거 확인을 포함해야 한다는 주장이고, 근거는 교육과정과 학생 프로젝트의 실제 운영 자료로 나누어 제시할 수 있습니다.",
+      },
+      {
+        question: "답변의 근거를 직접 검색해 보니 다른 통계가 있어. 그 부분을 수정해줘.",
+        answer: "서로 다른 통계의 조사 시점과 대상을 먼저 비교한 뒤, 확인된 범위만 사용하도록 문장을 조정하세요.",
+      },
+      {
+        question: "사용 목적과 활용 범위도 밝히면서 최종 문단을 내 말로 다시 써줘.",
+        answer: "자료 구조화와 질문 정리에 AI를 사용했고, 최종 주장과 표현은 직접 검토했다는 점을 문단에 넣어 보세요.",
+      },
+    ],
+    records: [
+      {
+        id: "fallback-2022000010-verify-1",
+        verdict: "확인 필요",
+        method: "직접 검색하기",
+        reason: "교육 현황을 설명하는 통계의 조사 시점을 대조해야 함",
+        sentence: "AI 교육 참여율 통계는 조사 대상과 시점을 원문에서 다시 확인해야 한다.",
+        executed: true,
+      },
+      {
+        id: "fallback-2022000010-verify-2",
+        verdict: "확인 필요",
+        method: "직접 검색하기",
+        reason: "두 번째 답변도 직접 근거를 확인할 필요가 있음",
+        sentence: "서로 다른 통계를 비교할 때는 같은 기준의 자료인지 먼저 확인해야 한다.",
+        executed: true,
+      },
+      {
+        id: "fallback-2022000010-revise-1",
+        verdict: "수정 필요",
+        method: "AI에게 추가 질문하기",
+        reason: "통계의 단정적 표현을 확인 가능한 범위로 줄임",
+        sentence: "고려대학교의 모든 학생이 AI 교육을 원한다.",
+        executed: true,
+      },
+    ],
+    submission: "나의 관점에서 고려대학교의 AI 교육은 근거 확인을 수업 안에 포함해야 한다. AI는 자료 구조화와 질문 정리에만 사용했고, 출처와 최종 주장 및 문장 표현은 직접 검토해 다시 구성했다.",
+    submittedAt: "2026-08-08T14:53:00Z",
+  },
+};
+
 const rubrics: Rubric[] = [
   { id: "initiative", label: "주도적 상호작용", rate: 68 },
   { id: "prompt", label: "프롬프트 설계", rate: 68 },
@@ -103,6 +509,85 @@ const initialScores: ScoreMap = {
   creative: null,
   transparent: null,
 };
+
+const scoreMapFrom = (incoming?: Partial<ScoreMap>): ScoreMap => ({
+  initiative: typeof incoming?.initiative === "number" ? incoming.initiative : null,
+  prompt: typeof incoming?.prompt === "number" ? incoming.prompt : null,
+  critical: typeof incoming?.critical === "number" ? incoming.critical : null,
+  creative: typeof incoming?.creative === "number" ? incoming.creative : null,
+  transparent: typeof incoming?.transparent === "number" ? incoming.transparent : null,
+});
+
+const fallbackTopic = (assignment: Assignment) => {
+  const separatorIndex = assignment.title.indexOf("_");
+  return separatorIndex >= 0 ? assignment.title.slice(separatorIndex + 1) : assignment.title;
+};
+
+const fillFallbackTokens = (value: string, student: Student, assignment: Assignment) => value
+  .replaceAll("{{name}}", student.name)
+  .replaceAll("{{topic}}", fallbackTopic(assignment));
+
+const fallbackRubricList = (profile: FallbackProfile): Rubric[] => rubrics.map((rubric) => ({
+  ...rubric,
+  rate: profile.rates[rubric.id],
+  reviewItems: rubric.id === "critical"
+    ? profile.records
+      .filter((record) => record.verdict === "확인 필요" && !record.executed)
+      .map((record, index) => ({
+        id: record.id ?? `fallback-review-${rubric.id}-${index}`,
+        rubricId: "critical" as RubricId,
+        status: "needs_review" as const,
+        evidence: record.sentence,
+        reason: record.reason,
+      }))
+    : [],
+}));
+
+const fallbackSubmittedAt = (assignment: Assignment, profile: FallbackProfile, assignmentId: number) => {
+  if (assignmentId === 1) return profile.submittedAt;
+  const dueAt = assignment.dueAt ? new Date(assignment.dueAt).getTime() : Number.NaN;
+  if (!Number.isFinite(dueAt)) return profile.submittedAt;
+  const offset = Math.max(60_000, profile.turns.length * 90_000);
+  return new Date(dueAt - offset).toISOString();
+};
+
+const buildFallbackSummary = (studentId: string, selectedAssignmentId: number): StudentSummary => {
+  const student = fallbackStudents.find((item) => item.id === studentId) ?? { id: studentId, name: "학생" };
+  const assignment = fallbackAssignmentsWithDueDates.find((item) => item.id === selectedAssignmentId) ?? {
+    id: selectedAssignmentId,
+    title: `과제 ${selectedAssignmentId}`,
+    description: "학생의 AI 협업 과정을 확인하는 과제입니다.",
+  };
+  const profile = fallbackProfiles[studentId] ?? fallbackProfiles["2022000009"];
+  const conversation = profile.turns.flatMap((turn) => [
+    { role: "user", text: fillFallbackTokens(turn.question, student, assignment) },
+    { role: "ai", text: fillFallbackTokens(turn.answer, student, assignment) },
+  ]);
+  const explorationRecords = profile.records.map((record) => ({
+    ...record,
+    id: `${record.id}-${selectedAssignmentId}`,
+    reason: fillFallbackTokens(record.reason, student, assignment),
+    sentence: fillFallbackTokens(record.sentence, student, assignment),
+  }));
+  const submission = selectedAssignmentId === 1
+    ? fillFallbackTokens(profile.submission, student, assignment)
+    : `${student.name}의 ${fallbackTopic(assignment)} 기록입니다.\n${fillFallbackTokens(profile.submission, student, assignment)}`;
+
+  return {
+    assignment,
+    rubrics: Object.fromEntries(fallbackRubricList({ ...profile, records: explorationRecords }).map((rubric) => [rubric.id, rubric])) as Partial<Record<RubricId, Rubric>>,
+    scores: initialScores,
+    explorationRecords,
+    conversation,
+    submission: {
+      content: submission,
+      submittedAt: fallbackSubmittedAt(assignment, profile, selectedAssignmentId),
+      status: "submitted",
+    },
+  };
+};
+
+const defaultFallbackSummary = buildFallbackSummary("2022000009", 1);
 
 const submissionText = (content?: string) => {
   if (!content) return "";
@@ -159,16 +644,16 @@ export default function InstructorPage() {
   const [assignmentId, setAssignmentId] = useState(1);
   const [assignments, setAssignments] = useState<Assignment[]>(fallbackAssignmentsWithDueDates);
   const [students, setStudents] = useState<Student[]>(fallbackStudents);
-  const [scores, setScores] = useState<ScoreMap>(initialScores);
+  const [scores, setScores] = useState<ScoreMap>(() => scoreMapFrom(defaultFallbackSummary.scores));
   const [saved, setSaved] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
   const [conversationOpen, setConversationOpen] = useState(false);
   const [toast, setToast] = useState("");
-  const [rubricRates, setRubricRates] = useState<Rubric[]>(rubrics);
-  const [studentRecords, setStudentRecords] = useState<ExplorationRecord[]>([]);
-  const [studentConversation, setStudentConversation] = useState<ConversationMessage[]>([]);
-  const [submittedContent, setSubmittedContent] = useState("");
-  const [submittedAt, setSubmittedAt] = useState<string | null>(null);
+  const [rubricRates, setRubricRates] = useState<Rubric[]>(() => fallbackRubricList(fallbackProfiles["2022000009"]));
+  const [studentRecords, setStudentRecords] = useState<ExplorationRecord[]>(() => defaultFallbackSummary.explorationRecords ?? []);
+  const [studentConversation, setStudentConversation] = useState<ConversationMessage[]>(() => defaultFallbackSummary.conversation ?? []);
+  const [submittedContent, setSubmittedContent] = useState(() => defaultFallbackSummary.submission?.content ?? "");
+  const [submittedAt, setSubmittedAt] = useState<string | null>(() => defaultFallbackSummary.submission?.submittedAt ?? null);
   const [reviewItem, setReviewItem] = useState<ReviewItem | null>(null);
   const [loading, setLoading] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
@@ -185,21 +670,16 @@ export default function InstructorPage() {
       setStudentConversation(summary.conversation ?? []);
       setSubmittedContent(submissionText(summary.submission?.content));
       setSubmittedAt(summary.submission?.submittedAt ?? null);
-      const incomingScores = summary.scores ?? {};
-      setScores({
-        initiative: typeof incomingScores.initiative === "number" ? incomingScores.initiative : null,
-        prompt: typeof incomingScores.prompt === "number" ? incomingScores.prompt : null,
-        critical: typeof incomingScores.critical === "number" ? incomingScores.critical : null,
-        creative: typeof incomingScores.creative === "number" ? incomingScores.creative : null,
-        transparent: typeof incomingScores.transparent === "number" ? incomingScores.transparent : null,
-      });
+      setScores(scoreMapFrom(summary.scores));
     } else {
-      setRubricRates(rubrics);
-      setStudentRecords([]);
-      setStudentConversation([]);
-      setSubmittedContent("");
-      setSubmittedAt(null);
-      setScores(initialScores);
+      const fallbackSummary = buildFallbackSummary(studentId, selectedAssignmentId);
+      const fallbackRubrics = fallbackSummary.rubrics ?? {};
+      setRubricRates(rubrics.map((rubric) => ({ ...rubric, ...(fallbackRubrics[rubric.id] ?? {}) })));
+      setStudentRecords(fallbackSummary.explorationRecords ?? []);
+      setStudentConversation(fallbackSummary.conversation ?? []);
+      setSubmittedContent(fallbackSummary.submission?.content ?? "");
+      setSubmittedAt(fallbackSummary.submission?.submittedAt ?? null);
+      setScores(scoreMapFrom(fallbackSummary.scores));
     }
     setLoading(false);
   }, []);
@@ -271,7 +751,11 @@ export default function InstructorPage() {
 
   const resolveReview = async (status: "fulfilled" | "not_fulfilled") => {
     if (!reviewItem) return;
-    await apiFetch(`/api/reviews/${reviewItem.id}/resolve`, { method: "POST", body: { studentId: selectedStudentId, assignmentId, status } });
+    const result = await apiFetch<{ saved?: boolean }>(`/api/reviews/${reviewItem.id}/resolve`, { method: "POST", body: { studentId: selectedStudentId, assignmentId, status } });
+    if (!result?.saved) {
+      setToast("DB 연결 후 교수 확인 결과를 저장할 수 있습니다.");
+      return;
+    }
     setReviewItem(null);
     await loadSummary(selectedStudentId, assignmentId);
     setToast(status === "fulfilled" ? "교수 확인 결과를 충족으로 반영했습니다." : "교수 확인 결과를 미충족으로 반영했습니다.");
