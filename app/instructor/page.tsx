@@ -592,8 +592,17 @@ const defaultFallbackSummary = buildFallbackSummary("2022000009", 1);
 const submissionText = (content?: string) => {
   if (!content) return "";
   const document = new DOMParser().parseFromString(content, "text/html");
+  const blockText = Array.from(document.body.querySelectorAll("h1, h2, h3, h4, p, li, blockquote"))
+    .map((element) => element.textContent?.trim() ?? "")
+    .filter(Boolean);
+  if (blockText.length > 0) return blockText.join("\n\n");
   return document.body.textContent?.trim() ?? "";
 };
+
+const submissionParagraphs = (content?: string) => (content ?? "")
+  .split(/\n{2,}/)
+  .map((paragraph) => paragraph.trim())
+  .filter(Boolean);
 
 const formatDateTime = (value?: string | null) => {
   if (!value) return "기록 없음";
@@ -711,6 +720,7 @@ export default function InstructorPage() {
   }, [toast]);
 
   const selectedStudent = students.find((student) => student.id === selectedStudentId) ?? students[0];
+  const documentParagraphs = submissionParagraphs(submittedContent);
   const enteredScores = Object.values(scores).filter((score): score is number => score !== null);
   const overallScore = enteredScores.length === rubrics.length
     ? (enteredScores.reduce((sum, score) => sum + score, 0) / enteredScores.length).toFixed(1)
@@ -825,8 +835,16 @@ export default function InstructorPage() {
       <section className="instructor-writing-area" aria-labelledby="instructor-assignment-title">
         <h1 id="instructor-assignment-title">{currentAssignment.title}</h1>
         <article className="instructor-document" aria-label="학생 과제 원문">
-          <div className="instructor-document-scroll">
-            {submittedContent || "제출된 학생 과제 원문이 없습니다."}
+          <header className="instructor-document-toolbar">
+            <span className="instructor-document-label"><span className="instructor-document-dot" aria-hidden="true" />학생 제출 원고</span>
+            <span className="instructor-document-student">{selectedStudent.name}</span>
+          </header>
+          <div className="instructor-document-page">
+            <div className="instructor-document-scroll">
+              {documentParagraphs.length > 0 ? documentParagraphs.map((paragraph, index) => (
+                <p key={`${paragraph.slice(0, 16)}-${index}`}>{paragraph}</p>
+              )) : <p className="instructor-document-empty">제출된 학생 과제 원문이 없습니다.</p>}
+            </div>
           </div>
         </article>
         <p className="submission-time">{submittedAt ? `제출 시간: ${submittedAt}` : "제출 시간: 제출 기록 없음"}</p>

@@ -235,9 +235,16 @@ button { cursor: pointer; }
 .instructor-student-pill img { width: 24px; height: 24px; border-radius: 50%; object-fit: cover; flex: 0 0 24px; }
 .instructor-writing-area { min-width: 0; display: flex; flex-direction: column; }
 .instructor-writing-area h1 { margin: 17px 0 25px; text-align: center; font-size: clamp(19px, 1.65vw, 25px); line-height: 1.3; letter-spacing: -.5px; }
-.instructor-document { height: 600px; padding: 18px 24px 24px; border: 1px solid #cfcfcf; border-radius: 29px; background: #fff; box-shadow: 0 14px 30px #0000000b; overflow: hidden; }
-.instructor-document-scroll { height: 100%; padding: 25px 14px 50px 4px; overflow-y: auto; overscroll-behavior: contain; scrollbar-color: #d0d0d0 transparent; scrollbar-width: thin; white-space: pre-wrap; }
-.instructor-document-scroll p { margin: 0 0 12px; color: #161616; font-size: 13px; line-height: 1.65; word-break: keep-all; }
+.instructor-document { height: 600px; min-height: 0; display: flex; flex-direction: column; padding: 0; border: 1px solid #cfcfcf; border-radius: 29px; background: #f7f7f5; box-shadow: 0 14px 30px #0000000b; overflow: hidden; }
+.instructor-document-toolbar { min-height: 48px; padding: 0 20px; display: flex; align-items: center; justify-content: space-between; gap: 12px; border-bottom: 1px solid #e5e5e3; background: #fafaf8; color: #8a8a8a; font-size: 10px; }
+.instructor-document-label { display: inline-flex; align-items: center; gap: 8px; color: #555; font-weight: 800; }
+.instructor-document-dot { width: 7px; height: 7px; flex: 0 0 7px; border-radius: 50%; background: var(--ku); }
+.instructor-document-student { color: #999; font-size: 10px; }
+.instructor-document-page { min-height: 0; flex: 1; margin: 16px 17px 18px; padding: 0 8px; border: 1px solid #ececeb; border-radius: 14px; background: #fff; box-shadow: 0 8px 18px #00000008; overflow: hidden; }
+.instructor-document-scroll { height: 100%; padding: 34px clamp(20px, 3vw, 48px) 60px; overflow-y: auto; overscroll-behavior: contain; scrollbar-color: #c8c8c8 transparent; scrollbar-width: thin; }
+.instructor-document-scroll p { max-width: 62ch; margin: 0 auto 20px; color: #1b1b1b; font-size: 14px; line-height: 1.95; letter-spacing: 0; word-break: keep-all; white-space: pre-wrap; }
+.instructor-document-scroll p:last-child { margin-bottom: 0; }
+.instructor-document-empty { padding-top: 90px; color: #999 !important; text-align: center; }
 .instructor-document-scroll strong { font-weight: 800; }
 .submission-time { display: none; }
 .submission-meta { margin: 18px 0 0; display: flex; justify-content: flex-end; align-items: center; flex-wrap: wrap; gap: 6px 12px; color: #999; text-align: right; font-size: 11px; }
@@ -371,9 +378,11 @@ button { cursor: pointer; }
   .student-roster { max-height: 275px; }
   .instructor-student-pill { min-height: 55px; margin-top: 17px; padding-inline: 19px; font-size: 11px; }
   .instructor-writing-area h1 { margin: 5px 0 20px; font-size: 20px; }
-  .instructor-document { height: 570px; padding: 30px 17px 20px; border-radius: 26px; }
-  .instructor-document-scroll { padding-inline: 5px; }
-  .instructor-document-scroll p { font-size: 12px; }
+  .instructor-document { height: 570px; border-radius: 26px; }
+  .instructor-document-toolbar { min-height: 45px; padding-inline: 16px; }
+  .instructor-document-page { margin: 12px 10px 12px; padding-inline: 4px; border-radius: 11px; }
+  .instructor-document-scroll { padding: 26px 16px 45px; }
+  .instructor-document-scroll p { font-size: 13px; line-height: 1.85; }
   .submission-time { margin-top: 18px; font-size: 11px; }
   .instructor-summary-panel { height: 660px; border-radius: 26px; }
   .instructor-summary-header { min-height: 58px; padding-inline: 19px; }
