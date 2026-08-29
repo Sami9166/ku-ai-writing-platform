@@ -20,7 +20,7 @@ INSERT INTO students (id, name, major, grade) VALUES
     ('2022000007', '이현지', NULL, NULL),
     ('2025000008', '정민준', NULL, NULL),
     ('2022000009', '정지영', '영어영문학과', 4),
-    ('2022000010', '주호빈', NULL, NULL);
+    ('2022000010', '주효빈', NULL, NULL);
 
 INSERT INTO enrollments (course_id, student_id)
 SELECT 1, id FROM students;
