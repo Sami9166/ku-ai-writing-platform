@@ -20,7 +20,7 @@ test("server-renders the KU AI writing workspace", async () => {
   assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
 
   const html = await response.text();
-  assert.match(html, /<title>KU AI 협업 과정 기록 플랫폼<\/title>/i);
+  assert.match(html, /<title>KUtrace \| 고려대학교 AI 협업 과정 기록 플랫폼<\/title>/i);
   assert.match(html, /글쓰기 2주차_고려대학교의 AI 발전을 위한 탐구/);
   assert.match(html, /AI 협업 진행 상황/);
   assert.match(html, /과제 본문 편집기/);
@@ -75,7 +75,7 @@ test("server-renders the KU AI writing workspace", async () => {
   assert.doesNotMatch(instructorPage, /renderMarkdown/);
   assert.match(instructorPage, /종합 점수/);
   assert.match(instructorPage, /role-switch-option active/);
-  assert.match(layout, /KU AI 협업 과정 기록 플랫폼/);
+  assert.match(layout, /KUtrace \| 고려대학교 AI 협업 과정 기록 플랫폼/);
   assert.match(layout, /og\.png/);
   assert.match(packageJson, /"dev":\s*"vinext dev"/);
   assert.doesNotMatch(packageJson, /WRANGLER_LOG_PATH=/);

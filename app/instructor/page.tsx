@@ -300,10 +300,13 @@ export default function InstructorPage() {
       </nav>
       <aside className="instructor-sidebar" aria-label="교수자 과제와 학생 탐색">
         <div>
-          <div className="instructor-brand" aria-label="Korea University">
+          <div className="instructor-brand" aria-label="KUtrace">
             <img src="/ku-logo-horizontal.png" alt="고려대학교 로고" />
           </div>
-          <p className="instructor-platform-name">고려대학교 AI 협업 과정 기록 플랫폼</p>
+          <p className="instructor-platform-name">
+            <strong>KUtrace</strong>
+            <span>고려대학교 AI 협업 과정 기록 플랫폼</span>
+          </p>
 
           <label className="course-select-label" htmlFor="course-select">과제 선택</label>
           <select id="course-select" className="course-select" value={assignmentId} onChange={(event) => selectAssignment(Number(event.target.value))}>

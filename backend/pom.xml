@@ -12,8 +12,8 @@
   <groupId>kr.ac.ku</groupId>
   <artifactId>ku-ai-writing-api</artifactId>
   <version>0.1.0</version>
-  <name>KU AI Writing Platform API</name>
-  <description>고려대학교 AI 협업 과정 기록 API</description>
+  <name>KUtrace API</name>
+  <description>KUtrace 고려대학교 AI 협업 과정 기록 API</description>
   <properties>
     <java.version>17</java.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
