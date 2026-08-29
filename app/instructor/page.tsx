@@ -657,6 +657,7 @@ export default function InstructorPage() {
   const [saved, setSaved] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
   const [conversationOpen, setConversationOpen] = useState(false);
+  const [explorationOpen, setExplorationOpen] = useState(true);
   const [toast, setToast] = useState("");
   const [rubricRates, setRubricRates] = useState<Rubric[]>(() => fallbackRubricList(fallbackProfiles["2022000009"]));
   const [studentRecords, setStudentRecords] = useState<ExplorationRecord[]>(() => defaultFallbackSummary.explorationRecords ?? []);
@@ -896,22 +897,39 @@ export default function InstructorPage() {
           <section className="exploration-section" aria-labelledby="exploration-title">
             <div className="instructor-section-heading">
               <h3 id="exploration-title">학생 AI 탐구 기록</h3>
-              <button type="button" className="conversation-button" onClick={() => setConversationOpen(true)}>전체 대화 기록 보기</button>
+              <div className="exploration-heading-actions">
+                <button
+                  type="button"
+                  className="exploration-toggle-button"
+                  aria-expanded={explorationOpen}
+                  aria-controls="exploration-record-list"
+                  title={explorationOpen ? "탐구 기록 접기" : "탐구 기록 펼치기"}
+                  onClick={() => setExplorationOpen((current) => !current)}
+                >
+                  <span aria-hidden="true">{explorationOpen ? "⌃" : "⌄"}</span>
+                  {explorationOpen ? "접기" : "펼치기"}
+                </button>
+                <button type="button" className="conversation-button" onClick={() => setConversationOpen(true)}>전체 대화 기록 보기</button>
+              </div>
             </div>
-            <div className="exploration-card">
-              {studentRecords.map((record, index) => (
-                <article className="exploration-record" key={record.id ?? `${record.verdict}-${index}`}>
-                  <div className="record-meta">
-                    <span className={`record-verdict record-verdict--${record.verdict === "확인 필요" ? "verify" : "revise"}`}>{record.verdict}</span>
-                    <span><strong>검증 방법</strong> | {record.method}</span>
-                    <span><strong>선택 사유</strong> | {record.reason}</span>
-                    {record.verdict === "확인 필요" && <span className={record.executed ? "record-executed" : "record-pending"}>{record.executed ? "실행 완료" : "실행 기록 없음"}</span>}
-                  </div>
-                  <p><strong>탐구 문장</strong> <span>|</span> {record.sentence}</p>
-                </article>
-              ))}
-            </div>
-            <p className="consent-note">*전체 대화 기록을 보기 위해서는 학생의 동의가 필요해요.</p>
+            {explorationOpen && (
+              <>
+                <div className="exploration-card" id="exploration-record-list">
+                  {studentRecords.map((record, index) => (
+                    <article className="exploration-record" key={record.id ?? `${record.verdict}-${index}`}>
+                      <div className="record-meta">
+                        <span className={`record-verdict record-verdict--${record.verdict === "확인 필요" ? "verify" : "revise"}`}>{record.verdict}</span>
+                        <span><strong>검증 방법</strong> | {record.method}</span>
+                        <span><strong>선택 사유</strong> | {record.reason}</span>
+                        {record.verdict === "확인 필요" && <span className={record.executed ? "record-executed" : "record-pending"}>{record.executed ? "실행 완료" : "실행 기록 없음"}</span>}
+                      </div>
+                      <p><strong>탐구 문장</strong> <span>|</span> {record.sentence}</p>
+                    </article>
+                  ))}
+                </div>
+                <p className="consent-note">*전체 대화 기록을 보기 위해서는 학생의 동의가 필요해요.</p>
+              </>
+            )}
           </section>
 
           <section className="score-section" aria-labelledby="score-title">
