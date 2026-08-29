@@ -365,13 +365,11 @@ export default function Home() {
       </nav>
       <aside className="sidebar" aria-label="과제 탐색">
         <div>
-            <div className="ku-brand" aria-label="KUtrace">
-              <img className="ku-logo" src="/ku-logo-horizontal.png" alt="고려대학교 로고" />
-            </div>
-          <p className="platform-name">
-            <strong>KUtrace</strong>
-            <span>고려대학교 AI 협업 과정 기록 플랫폼</span>
-          </p>
+          <div className="brand-lockup" aria-label="KUtrace">
+            <img className="brand-lockup-logo" src="/ku-logo-horizontal.png" alt="고려대학교 로고" />
+            <strong className="brand-lockup-name">KUtrace</strong>
+            <span className="brand-lockup-tagline">고려대학교 AI 협업 과정 기록 및 평가 플랫폼</span>
+          </div>
         </div>
 
         <nav className="assignment-list" aria-label="주차별 글쓰기 과제">

@@ -49,27 +49,28 @@ button { cursor: pointer; }
   min-height: 700px;
 }
 
-.ku-brand { display: flex; align-items: center; color: var(--ku); }
-.ku-logo { display: block; width: min(180px, 100%); height: auto; object-fit: contain; object-position: left center; }
-.platform-name,
-.instructor-platform-name {
-  margin: 16px 0 28px;
+.brand-lockup {
+  margin-bottom: 28px;
   display: grid;
-  gap: 6px;
-  font-size: 14px;
-  font-weight: 700;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-rows: auto auto;
+  align-items: center;
+  column-gap: clamp(10px, 1.2vw, 18px);
+  row-gap: 14px;
 }
-.platform-name strong,
-.instructor-platform-name strong {
+.brand-lockup-logo { display: block; width: min(180px, 100%); height: auto; object-fit: contain; object-position: left center; }
+.brand-lockup-name {
+  grid-column: 2;
   color: var(--ku);
-  font-size: 22px;
+  font-size: 29.33px;
   line-height: 1;
   letter-spacing: 0;
+  white-space: nowrap;
 }
-.platform-name span,
-.instructor-platform-name span {
+.brand-lockup-tagline {
+  grid-column: 1 / -1;
   color: #333;
-  font-size: 11px;
+  font-size: 14.67px;
   font-weight: 700;
   line-height: 1.45;
   letter-spacing: 0;
@@ -219,7 +220,6 @@ button { cursor: pointer; }
   overflow: visible;
 }
 .instructor-sidebar { min-width: 0; min-height: 700px; padding-right: clamp(20px, 2.2vw, 34px); display: flex; flex-direction: column; justify-content: space-between; border-right: 1px solid #bfbfbf; }
-.instructor-brand img { display: block; width: min(180px, 100%); height: auto; object-fit: contain; object-position: left center; }
 .course-select-label { display: block; margin: 0 0 7px 7px; color: #777; font-size: 10px; }
 .course-select { width: 100%; height: 43px; padding: 0 12px; border: 1px solid #a9a9a9; border-radius: 10px; outline: 0; background: white; color: #222; font-size: 11px; text-overflow: ellipsis; }
 .course-select:focus { border-color: var(--ku); box-shadow: 0 0 0 3px #971f3320; }
@@ -362,9 +362,10 @@ button { cursor: pointer; }
 @media (max-width: 760px) {
   .role-switch { top: 10px; right: 12px; }
   .role-switch-option { min-width: 50px; height: 27px; padding-inline: 9px; font-size: 10px; }
-  .workspace { width: 100%; margin: 0; padding: 22px 16px 35px; display: flex; flex-direction: column; border: 0; }
+  .workspace { width: 100%; margin: 0; padding: 64px 16px 35px; display: flex; flex-direction: column; border: 0; }
   .sidebar { min-height: 0; padding: 0; border: 0; }
-  .platform-name { margin-bottom: 18px; }
+  .brand-lockup { margin-bottom: 22px; column-gap: 12px; row-gap: 11px; }
+  .brand-lockup-logo { width: min(180px, 100%); }
   .assignment-list { display: flex; overflow-x: auto; }
   .assignment-list button { min-width: 210px; }
   .sidebar-bottom { margin-top: 18px; grid-template-columns: 1fr; }
@@ -375,10 +376,9 @@ button { cursor: pointer; }
   .ai-panel { width: 100%; height: clamp(660px, calc(100dvh - 70px), 760px); }
   .bubble { font-size: 12px; }
 
-  .instructor-workspace { display: flex; flex-direction: column; gap: 25px; padding: 25px 16px 34px; overflow: visible; }
+  .instructor-workspace { display: flex; flex-direction: column; gap: 25px; padding: 64px 16px 34px; overflow: visible; }
   .instructor-sidebar { min-height: 0; padding: 0; border: 0; }
-  .instructor-brand img { width: 180px; }
-  .instructor-platform-name { margin-bottom: 22px; font-size: 14px; }
+  .brand-lockup { margin-bottom: 22px; }
   .student-roster { max-height: 275px; }
   .instructor-student-pill { min-height: 55px; margin-top: 17px; padding-inline: 19px; font-size: 11px; }
   .instructor-writing-area h1 { margin: 5px 0 20px; font-size: 20px; }
