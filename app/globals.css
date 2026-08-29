@@ -37,7 +37,7 @@ button { cursor: pointer; }
   gap: clamp(28px, 3.1vw, 52px);
   background: #fff;
   border: 0;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .sidebar {
@@ -98,7 +98,7 @@ button { cursor: pointer; }
 
 .writing-area { min-width: 0; display: flex; flex-direction: column; }
 .writing-area h1 { margin: 17px 0 25px; text-align: center; font-size: clamp(19px, 1.65vw, 25px); line-height: 1.3; letter-spacing: -.5px; }
-.document-shell { height: 600px; padding: 18px 24px 24px; border: 1px solid #cfcfcf; border-radius: 29px; background: #fff; overflow: hidden; }
+.document-shell { height: clamp(600px, calc(100dvh - 150px), 760px); padding: 18px 24px 24px; border: 1px solid #cfcfcf; border-radius: 29px; background: #fff; overflow: hidden; }
 .editor-toolbar { height: 34px; display: flex; align-items: center; gap: 4px; border-bottom: 1px solid #d9d9d9; color: #9a9a9a; }
 .editor-toolbar select { height: 26px; max-width: 178px; border: 0; border-right: 1px solid #e1e1e1; background: white; color: #8f8f8f; font-size: 10px; }
 .editor-toolbar select:nth-child(2) { width: 48px; }
@@ -119,7 +119,7 @@ button { cursor: pointer; }
 .primary-action { background: var(--ku); color: white; }
 .primary-action:hover { background: var(--ku-dark); }
 
-.ai-panel { height: 690px; position: relative; display: flex; flex-direction: column; border: 1px solid #a9a9a9; border-radius: 30px; background: var(--panel); overflow: hidden; }
+.ai-panel { height: clamp(690px, calc(100dvh - 72px), 860px); position: relative; display: flex; flex-direction: column; border: 1px solid #a9a9a9; border-radius: 30px; background: var(--panel); overflow: hidden; }
 .ai-header { min-height: 58px; padding: 0 22px; display: flex; align-items: center; justify-content: flex-end; background: var(--ku); color: white; }
 .ai-header h2 { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 .menu-button { width: 34px; height: 38px; display: grid; align-content: center; gap: 5px; border: 0; background: transparent; }
@@ -216,7 +216,7 @@ button { cursor: pointer; }
   grid-template-columns: minmax(235px, .72fr) minmax(410px, 1.15fr) minmax(350px, .92fr);
   gap: clamp(28px, 3.1vw, 52px);
   background: #fff;
-  overflow: hidden;
+  overflow: visible;
 }
 .instructor-sidebar { min-width: 0; min-height: 700px; padding-right: clamp(20px, 2.2vw, 34px); display: flex; flex-direction: column; justify-content: space-between; border-right: 1px solid #bfbfbf; }
 .instructor-brand img { display: block; width: min(180px, 100%); height: auto; object-fit: contain; object-position: left center; }
@@ -235,7 +235,7 @@ button { cursor: pointer; }
 .instructor-student-pill img { width: 24px; height: 24px; border-radius: 50%; object-fit: cover; flex: 0 0 24px; }
 .instructor-writing-area { min-width: 0; display: flex; flex-direction: column; }
 .instructor-writing-area h1 { margin: 17px 0 25px; text-align: center; font-size: clamp(19px, 1.65vw, 25px); line-height: 1.3; letter-spacing: -.5px; }
-.instructor-document { height: 600px; min-height: 0; display: flex; flex-direction: column; padding: 0; border: 1px solid #cfcfcf; border-radius: 29px; background: #f7f7f5; box-shadow: 0 14px 30px #0000000b; overflow: hidden; }
+.instructor-document { height: clamp(600px, calc(100dvh - 150px), 760px); min-height: 0; display: flex; flex-direction: column; padding: 0; border: 1px solid #cfcfcf; border-radius: 29px; background: #f7f7f5; box-shadow: 0 14px 30px #0000000b; overflow: hidden; }
 .instructor-document-toolbar { min-height: 48px; padding: 0 20px; display: flex; align-items: center; justify-content: space-between; gap: 12px; border-bottom: 1px solid #e5e5e3; background: #fafaf8; color: #8a8a8a; font-size: 10px; }
 .instructor-document-label { display: inline-flex; align-items: center; gap: 8px; color: #555; font-weight: 800; }
 .instructor-document-dot { width: 7px; height: 7px; flex: 0 0 7px; border-radius: 50%; background: var(--ku); }
@@ -252,7 +252,7 @@ button { cursor: pointer; }
 .submission-status { padding: 4px 9px; border-radius: 999px; font-weight: 700; }
 .submission-status--normal { background: #e4f3e7; color: #2e7d32; }
 .submission-status--late { background: #fde4e4; color: #a12632; }
-.instructor-summary-panel { min-width: 0; height: 690px; position: relative; display: flex; flex-direction: column; border: 1px solid #a9a9a9; border-radius: 30px; background: var(--panel); overflow: hidden; }
+.instructor-summary-panel { min-width: 0; height: clamp(690px, calc(100dvh - 72px), 860px); position: relative; display: flex; flex-direction: column; border: 1px solid #a9a9a9; border-radius: 30px; background: var(--panel); overflow: hidden; }
 .instructor-summary-header { min-height: 58px; padding: 0 22px; display: flex; align-items: center; justify-content: space-between; background: var(--ku); color: white; }
 .instructor-summary-header h2 { margin: 0; font-size: 18px; letter-spacing: -.4px; }
 .instructor-help-button { width: 32px; height: 32px; display: grid; place-items: center; border: 2px solid white; border-radius: 50%; background: transparent; color: white; font-size: 20px; font-weight: 700; line-height: 1; }
@@ -341,7 +341,7 @@ button { cursor: pointer; }
 
 @media (max-width: 1120px) {
   .workspace { grid-template-columns: 220px minmax(390px, 1fr); }
-  .ai-panel { grid-column: 2; height: 640px; }
+  .ai-panel { grid-column: 2; height: clamp(640px, calc(100dvh - 72px), 820px); }
   .sidebar { grid-row: 1 / span 2; }
 }
 
@@ -355,7 +355,7 @@ button { cursor: pointer; }
 @media (max-width: 1120px) {
   .instructor-workspace { grid-template-columns: 220px minmax(390px, 1fr); overflow: visible; }
   .instructor-sidebar { grid-row: 1 / span 2; min-height: 700px; }
-  .instructor-summary-panel { grid-column: 2; grid-row: 2; height: 640px; }
+  .instructor-summary-panel { grid-column: 2; grid-row: 2; height: clamp(640px, calc(100dvh - 72px), 820px); }
   .instructor-writing-area h1 { margin-top: 17px; }
 }
 
@@ -370,9 +370,9 @@ button { cursor: pointer; }
   .sidebar-bottom { margin-top: 18px; grid-template-columns: 1fr; }
   .student-pill { order: -1; }
   .writing-area h1 { margin-top: 10px; }
-  .document-shell { height: 570px; padding-inline: 15px; }
+  .document-shell { height: clamp(570px, calc(100dvh - 90px), 720px); padding-inline: 15px; }
   .essay-editor { font-size: 13px; }
-  .ai-panel { width: 100%; height: 660px; }
+  .ai-panel { width: 100%; height: clamp(660px, calc(100dvh - 70px), 760px); }
   .bubble { font-size: 12px; }
 
   .instructor-workspace { display: flex; flex-direction: column; gap: 25px; padding: 25px 16px 34px; overflow: visible; }
@@ -382,13 +382,13 @@ button { cursor: pointer; }
   .student-roster { max-height: 275px; }
   .instructor-student-pill { min-height: 55px; margin-top: 17px; padding-inline: 19px; font-size: 11px; }
   .instructor-writing-area h1 { margin: 5px 0 20px; font-size: 20px; }
-  .instructor-document { height: 570px; border-radius: 26px; }
+  .instructor-document { height: clamp(570px, calc(100dvh - 90px), 720px); border-radius: 26px; }
   .instructor-document-toolbar { min-height: 45px; padding-inline: 16px; }
   .instructor-document-page { margin: 12px 10px 12px; padding-inline: 4px; border-radius: 11px; }
   .instructor-document-scroll { padding: 26px 16px 45px; }
   .instructor-document-scroll p { font-size: 13px; line-height: 1.85; }
   .submission-time { margin-top: 18px; font-size: 11px; }
-  .instructor-summary-panel { height: 660px; border-radius: 26px; }
+  .instructor-summary-panel { height: clamp(660px, calc(100dvh - 70px), 760px); border-radius: 26px; }
   .instructor-summary-header { min-height: 58px; padding-inline: 19px; }
   .instructor-summary-header h2 { font-size: 17px; }
   .instructor-summary-scroll { padding: 16px 18px 15px; }
