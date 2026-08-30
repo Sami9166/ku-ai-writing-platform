@@ -182,6 +182,11 @@ export default function Home() {
     selection.removeAllRanges();
   };
 
+  const captureSelectionAfterTouch = () => {
+    window.setTimeout(captureSelection, 0);
+    window.setTimeout(captureSelection, 80);
+  };
+
   const saveDraft = () => {
     if (editorRef.current) {
       const content = editorRef.current.innerHTML;
@@ -493,6 +498,7 @@ export default function Home() {
               tabIndex={0}
               data-ai-response-id="response-1"
               onMouseUp={captureSelection}
+              onTouchEnd={captureSelectionAfterTouch}
               onKeyUp={captureSelection}
             >
               {renderAnswer("response-1", AI_ANSWER)}
@@ -509,6 +515,7 @@ export default function Home() {
                   data-ai-response-id={message.id}
                   tabIndex={0}
                   onMouseUp={captureSelection}
+                  onTouchEnd={captureSelectionAfterTouch}
                   onKeyUp={captureSelection}
                 >
                   <div className="message-text">{renderAnswer(message.id, message.text)}</div>
