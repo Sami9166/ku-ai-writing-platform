@@ -85,6 +85,7 @@ export default function Home() {
   const [historyOpen, setHistoryOpen] = useState(false);
   const [guideOpen, setGuideOpen] = useState(false);
   const [pendingEventIds, setPendingEventIds] = useState<string[]>([]);
+  const verdictEventRequestRef = useRef<Promise<string | null> | null>(null);
   const currentAssignment = assignments.find((item) => item.id === assignmentId) ?? fallbackAssignments[1];
 
   useEffect(() => {
@@ -201,6 +202,7 @@ export default function Home() {
     setVerdict(null);
     setVerdictResponseId(null);
     setPendingEventIds([]);
+    verdictEventRequestRef.current = null;
     setToast("형광펜 표시를 모두 취소했습니다.");
   };
 
@@ -211,7 +213,8 @@ export default function Home() {
       return;
     }
     const label = verdicts.find((item) => item.id === nextVerdict)?.label ?? "AI 검토";
-    const result = await apiFetch<{ event?: { id?: string } }>("/api/events", {
+    const selectedText = selectedHighlights.map((highlight) => highlight.text).join("\n");
+    const eventRequest = apiFetch<{ event?: { id?: string } }>("/api/events", {
       method: "POST",
       body: {
         studentId,
@@ -222,11 +225,11 @@ export default function Home() {
         verdict: nextVerdict,
         reason: nextVerdict === "revise" ? "수정 방향을 선택했습니다." : "AI 답변을 검토했습니다.",
       },
-    });
-    setPendingEventIds(result?.event?.id ? [result.event.id] : []);
+    }).then((result) => result?.event?.id ?? null).catch(() => null);
+    verdictEventRequestRef.current = eventRequest;
+    setPendingEventIds([]);
     setVerdict(nextVerdict);
     setVerdictResponseId(responseId);
-    const selectedText = selectedHighlights.map((highlight) => highlight.text).join("\n");
     if (editorRef.current) {
       const note = document.createElement("p");
       note.className = `ai-note ai-note--${nextVerdict}`;
@@ -240,6 +243,10 @@ export default function Home() {
       verify: current.verify + (nextVerdict === "verify" ? 1 : 0),
     }));
     setToast(`${selectedHighlights.length}개 선택 문장이 ‘${label}’ 기록으로 과제에 추가되었습니다.`);
+    void eventRequest.then((eventId) => {
+      if (verdictEventRequestRef.current !== eventRequest || !eventId) return;
+      setPendingEventIds([eventId]);
+    });
   };
 
   const chooseFollowup = async (choice: string) => {
@@ -247,7 +254,16 @@ export default function Home() {
       .filter((highlight) => highlight.responseId === verdictResponseId)
       .map((highlight) => highlight.text)
       .join(" ");
-    await Promise.all(pendingEventIds.map((parentEventId) => apiFetch("/api/events", {
+    let parentEventIds = pendingEventIds;
+    const pendingRequest = verdictEventRequestRef.current;
+    if (parentEventIds.length === 0 && pendingRequest) {
+      const eventId = await Promise.race([
+        pendingRequest,
+        new Promise<string | null>((resolve) => window.setTimeout(() => resolve(null), 1500)),
+      ]);
+      if (eventId) parentEventIds = [eventId];
+    }
+    void Promise.all(parentEventIds.map((parentEventId) => apiFetch("/api/events", {
       method: "POST",
       body: {
         studentId,
@@ -259,6 +275,7 @@ export default function Home() {
         executed: true,
       },
     })));
+    verdictEventRequestRef.current = null;
     if (verdict === "verify") setProgress((current) => ({ ...current, verify: current.verify + 1 }));
     setVerdict(null);
     setVerdictResponseId(null);
@@ -312,6 +329,7 @@ export default function Home() {
     setVerdict(null);
     setVerdictResponseId(null);
     setPendingEventIds([]);
+    verdictEventRequestRef.current = null;
     setMessages([]);
     setAssignmentId(nextAssignmentId);
   };
@@ -457,7 +475,7 @@ export default function Home() {
         {menuOpen && (
           <div className="ai-menu">
             <button type="button" onClick={() => setMenuOpen(false)}>신고하기</button>
-            <button type="button" onClick={() => { setMessages([]); setHighlights([]); setActiveResponseId(null); setVerdict(null); setVerdictResponseId(null); setPendingEventIds([]); setMenuOpen(false); setToast("새 대화 화면을 준비했습니다. 기존 기록은 안전하게 보관됩니다."); }}>새 대화 시작</button>
+            <button type="button" onClick={() => { setMessages([]); setHighlights([]); setActiveResponseId(null); setVerdict(null); setVerdictResponseId(null); setPendingEventIds([]); verdictEventRequestRef.current = null; setMenuOpen(false); setToast("새 대화 화면을 준비했습니다. 기존 기록은 안전하게 보관됩니다."); }}>새 대화 시작</button>
             <button type="button" onClick={() => { setHistoryOpen(true); setMenuOpen(false); }}>이전 대화 보기</button>
             <button type="button" onClick={() => { setGuideOpen(true); setMenuOpen(false); }}>AI 활용 안내</button>
           </div>
