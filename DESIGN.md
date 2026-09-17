@@ -27,9 +27,9 @@
 - Content hierarchy: 브랜드 → 선택 컨텍스트 → 학생 글 → AI 협업 요약 → 루브릭 점수
 
 ## Design principles
-- Principle 1: 한 화면에서 비교하되, 긴 콘텐츠는 해당 영역 안에서 독립적으로 스크롤합니다.
+- Principle 1: 한 화면에서 비교하되, 데스크톱의 긴 콘텐츠는 해당 영역 안에서 독립적으로 스크롤하고 모바일 교수자 화면은 페이지 전체를 스크롤합니다.
 - Principle 2: 요약 수치와 원문을 시각적으로 분리하고, 확인 필요 상태는 색상과 텍스트를 함께 사용합니다.
-- Tradeoffs: 전체 페이지 스크롤을 줄이는 대신 학생 글과 탐구 기록에 고정 높이 내부 스크롤을 둡니다.
+- Tradeoffs: 데스크톱은 전체 페이지 스크롤을 줄이는 대신 학생 글과 탐구 기록에 고정 높이 내부 스크롤을 두고, 모바일 교수자 화면은 단일 페이지 스크롤로 읽기 흐름을 단순화합니다.
 
 ## Visual language
 - Color: 고려대학교 버건디 `#971f33`를 주요 강조색으로 사용하고, 본문은 검정·회색으로 유지합니다.
@@ -53,8 +53,8 @@
 - Reduced motion and sensory considerations: 움직임을 최소화하고 색상만으로 상태를 전달하지 않습니다.
 
 ## Responsive behavior
-- Mobile focus model: on screens <=760px, student work switches between `작성` and `AI 도우미`, while instructor work switches between `제출물` and `AI 분석 · 채점`; desktop panes remain unchanged. Each mobile tab keeps only its focused work surface visible, with student editor/chat and instructor roster, submission document, and analysis content independently scrollable.
-- Mobile controls use touch-sized actions, safe-area padding, and a single focused scroll surface per tab.
+- Mobile focus model: on screens <=760px, student work switches between `작성` and `AI 도우미`, while instructor work switches between `제출물` and `AI 분석 · 채점`; desktop panes remain unchanged. Each mobile tab keeps only its focused work surface visible, with the tab controls at the top of the page flow while the instructor surface uses one page-level scroll.
+- Mobile controls use touch-sized actions and safe-area padding; tabs stay in the top flow instead of covering content while the instructor surface uses one page-level scroll.
 - Supported breakpoints/devices: 1120px 이하 2열, 760px 이하 세로 흐름
 - Layout adaptations: 데스크톱은 3열, 모바일은 원문과 요약을 순서대로 배치합니다.
 - Touch/hover differences: 버튼 터치 영역을 유지하고 hover에 의존하지 않습니다.
@@ -65,7 +65,7 @@
 - Error: API 실패 시 기존 화면의 빈 상태와 재시도 동작을 보존합니다.
 - Success: 분석 완료와 점수 저장 완료 상태를 토스트로 알립니다.
 - Disabled: AI 분석 중 분석 버튼을 비활성화합니다.
-- Offline/slow network, if applicable: 긴 목록은 내부 스크롤을 유지해 나머지 화면의 위치가 흔들리지 않게 합니다.
+- Offline/slow network, if applicable: 학생 편집·대화 영역은 내부 스크롤을 유지하고, 교수자 모바일의 명단·제출물·분석은 페이지 흐름 안에서 함께 스크롤합니다.
 
 ## Content voice
 - Tone: 짧고 명확하며 평가를 단정하지 않는 안내 문장

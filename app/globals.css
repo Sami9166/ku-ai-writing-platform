@@ -418,9 +418,9 @@ button { cursor: pointer; }
 @media (max-width: 760px) {
   /* Mobile uses one focused work surface at a time; desktop keeps all panes visible. */
   .mobile-view-tabs {
-    position: sticky;
-    top: max(58px, env(safe-area-inset-top));
-    z-index: 50;
+    position: relative;
+    top: auto;
+    z-index: auto;
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 4px;
@@ -570,7 +570,7 @@ button { cursor: pointer; }
 }
 
 @media (max-width: 760px) {
-  /* Keep mobile reading surfaces independent so the roster never pushes the document out of view. */
+  /* Instructor mobile uses one page scroll; keep only the focused tab surface visible. */
   .instructor-workspace {
     height: auto;
     min-height: 100dvh;
@@ -581,6 +581,7 @@ button { cursor: pointer; }
   .instructor-workspace .mobile-view-tabs {
     position: relative;
     top: auto;
+    z-index: auto;
     flex: 0 0 auto;
     margin-bottom: 0;
   }
@@ -588,19 +589,15 @@ button { cursor: pointer; }
   .instructor-workspace .mobile-pane { min-height: 0; }
 
   .instructor-workspace .instructor-sidebar {
-    flex: 0 0 min(280px, 32dvh);
+    flex: 0 0 auto;
     min-height: 0;
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    scrollbar-color: #c7c7c7 transparent;
-    scrollbar-width: thin;
+    overflow: visible;
   }
 
   .instructor-workspace .instructor-writing-area {
     min-height: 0;
-    flex: 1 1 auto;
-    overflow-y: auto;
-    overscroll-behavior: contain;
+    flex: 0 0 auto;
+    overflow: visible;
   }
 
   .instructor-workspace .instructor-writing-area h1,
@@ -609,12 +606,42 @@ button { cursor: pointer; }
   .instructor-workspace .instructor-document {
     height: auto;
     min-height: 0;
-    flex: 1 1 auto;
+    flex: 0 0 auto;
+    overflow: visible;
+  }
+
+  .instructor-workspace .instructor-document-page {
+    min-height: 0;
+    overflow: visible;
+  }
+
+  .instructor-workspace .instructor-document-scroll {
+    height: auto;
+    overflow: visible;
+    overscroll-behavior: auto;
+  }
+
+  .instructor-workspace .student-roster {
+    max-height: none;
+    overflow: visible;
   }
 
   .instructor-workspace .instructor-summary-panel {
     height: auto;
     min-height: 0;
-    flex: 1 1 auto;
+    flex: 0 0 auto;
+    overflow: visible;
+  }
+
+  .instructor-workspace .instructor-summary-scroll {
+    height: auto;
+    flex: 0 0 auto;
+    overflow: visible;
+  }
+
+  .instructor-workspace .exploration-card {
+    max-height: none;
+    overflow: visible;
+    overscroll-behavior: auto;
   }
 }
