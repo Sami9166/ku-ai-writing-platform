@@ -64,6 +64,7 @@ public class PlatformController {
     public Map<String, Object> health() {
         return mapOf("ok", true, "mode", "mysql", "ai", mapOf(
             "student", ai.studentEnabled() ? ai.studentModel() : "mock",
+            "studentFallback", ai.studentFallbackEnabled(),
             "rubric", ai.rubricEnabled() ? ai.rubricModel() : "mock"
         ));
     }

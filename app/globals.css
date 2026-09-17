@@ -205,6 +205,7 @@ button { cursor: pointer; }
 .role-switch-option { min-width: 58px; height: 30px; padding: 0 12px; display: grid; place-items: center; border-radius: 999px; color: #777; font-size: 11px; font-weight: 700; text-decoration: none; transition: color .18s, background .18s, box-shadow .18s; }
 .role-switch-option:hover { color: var(--ku); background: #fff; }
 .role-switch-option.active { background: var(--ku); color: white; box-shadow: 0 3px 8px #971f3340; }
+.mobile-view-tabs { display: none; }
 
 /* 교수자 과제 평가 화면 */
 .instructor-workspace {
@@ -412,4 +413,156 @@ button { cursor: pointer; }
   .instructor-modal { padding: 27px 22px; }
   .instructor-modal h2 { font-size: 20px; }
   .conversation-message { max-width: 92%; }
+}
+
+@media (max-width: 760px) {
+  /* Mobile uses one focused work surface at a time; desktop keeps all panes visible. */
+  .mobile-view-tabs {
+    position: sticky;
+    top: max(58px, env(safe-area-inset-top));
+    z-index: 50;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 4px;
+    margin: 0 0 20px;
+    padding: 4px;
+    border: 1px solid #d8d8d8;
+    border-radius: 15px;
+    background: #f4f4f4ee;
+    box-shadow: 0 6px 18px #00000012;
+    backdrop-filter: blur(8px);
+  }
+
+  .mobile-view-tab {
+    min-width: 0;
+    min-height: 44px;
+    padding: 0 10px;
+    border: 0;
+    border-radius: 11px;
+    background: transparent;
+    color: #777;
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  .mobile-view-tab[aria-selected="true"] {
+    background: var(--ku);
+    color: white;
+    box-shadow: 0 3px 8px #971f3333;
+  }
+
+  .mobile-pane-hidden { display: none !important; }
+  .workspace,
+  .instructor-workspace {
+    padding-bottom: calc(35px + env(safe-area-inset-bottom));
+  }
+
+  .role-switch-option {
+    min-width: 50px;
+    min-height: 40px;
+    height: 40px;
+    font-size: 11px;
+  }
+
+  .document-shell,
+  .ai-panel,
+  .instructor-document,
+  .instructor-summary-panel {
+    height: min(720px, calc(100dvh - 155px));
+    min-height: 480px;
+  }
+
+  .editor-toolbar {
+    height: 48px;
+    min-height: 48px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .editor-toolbar::-webkit-scrollbar { display: none; }
+  .editor-toolbar select,
+  .editor-toolbar button {
+    flex: 0 0 auto;
+    min-height: 44px;
+    height: 44px;
+    font-size: 12px;
+  }
+
+  .editor-toolbar select { max-width: 180px; }
+  .editor-toolbar select:nth-child(2) { width: 58px; }
+  .editor-toolbar button { width: 44px; }
+  .editor-toolbar .cite-tool { width: 58px; font-size: 11px; }
+  .essay-editor { height: calc(100% - 48px); padding: 20px 10px 42px 4px; font-size: 16px; line-height: 1.7; }
+
+  .editor-actions {
+    position: sticky;
+    bottom: env(safe-area-inset-bottom);
+    z-index: 10;
+    margin-top: 0;
+    padding: 10px 0;
+    background: #fff;
+  }
+
+  .editor-actions button {
+    flex: 1 1 0;
+    min-height: 48px;
+    height: 48px;
+    font-size: 13px;
+  }
+
+  .ai-header { padding-inline: 16px; }
+  .menu-button { width: 44px; height: 44px; }
+  .menu-button span { width: 25px; }
+  .ai-instruction { margin-inline: 14px; font-size: 11px; line-height: 1.5; }
+  .chat-scroll { padding-inline: 14px; padding-bottom: 190px; }
+  .bubble { max-width: 90%; padding: 14px 15px; font-size: 14px; }
+  .verdict-actions button,
+  .followup-card button { min-height: 44px; height: auto; font-size: 12px; }
+  .verdict-actions .clear-highlight-button { min-height: 44px; }
+  .followup-card { left: 12px; right: 12px; bottom: 72px; }
+  .followup-card h3 { font-size: 12px; }
+  .chat-input {
+    min-height: 52px;
+    margin: 0 12px calc(12px + env(safe-area-inset-bottom));
+    padding-left: 16px;
+  }
+  .chat-input input { font-size: 16px; }
+  .chat-input button { width: 44px; height: 44px; margin-right: 3px; }
+
+  .course-select { height: 48px; font-size: 16px; }
+  .student-row { min-height: 44px; font-size: 13px; }
+  .student-row span { padding-right: 10px; }
+  .student-roster { max-height: min(275px, 35vh); }
+  .instructor-summary-header { padding-inline: 16px; }
+  .instructor-help-button { width: 44px; height: 44px; }
+  .analysis-button,
+  .exploration-toggle-button,
+  .conversation-button,
+  .review-needed-button { min-height: 44px; font-size: 11px; }
+  .exploration-heading-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .exploration-heading-actions > * { width: 100%; }
+  .score-grid { grid-template-columns: 1fr; gap: 22px; }
+  .score-options { gap: 8px; }
+  .score-option { width: 44px; height: 44px; font-size: 13px; }
+  .save-score-button { min-height: 50px; margin-inline: 16px; }
+
+  .modal-backdrop,
+  .instructor-modal-backdrop {
+    align-items: end;
+    padding: 12px;
+    padding-bottom: calc(12px + env(safe-area-inset-bottom));
+  }
+
+  .submit-modal,
+  .student-history-modal,
+  .instructor-modal {
+    max-height: calc(100dvh - 70px);
+    padding: 24px 18px;
+    border-radius: 21px 21px 14px 14px;
+  }
+
+  .submit-modal > div,
+  .review-modal-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .submit-modal button,
+  .review-modal-actions button { min-width: 0; min-height: 48px; }
 }

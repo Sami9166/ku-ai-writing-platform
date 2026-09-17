@@ -2,9 +2,26 @@ package kr.ac.ku.aiwriting;
 
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 class AiServiceTest {
+    @Test
+    void keepsPrimaryAndBackupKeysInOrderWithoutDuplicates() {
+        assertThat(AiService.uniqueNonBlank(" primary ", "backup", "primary", " ", null))
+            .isEqualTo(List.of("primary", "backup"));
+    }
+
+    @Test
+    void onlyFailsOverForProviderAvailabilityOrCredentialFailures() {
+        assertThat(AiService.shouldTryFallback(401)).isTrue();
+        assertThat(AiService.shouldTryFallback(429)).isTrue();
+        assertThat(AiService.shouldTryFallback(503)).isTrue();
+        assertThat(AiService.shouldTryFallback(400)).isFalse();
+        assertThat(AiService.shouldTryFallback(404)).isFalse();
+    }
+
     @Test
     void removesUnverifiedUrlsFromGeneratedText() {
         assertThat(AiService.sanitizeAnswer("공식 자료는 [가짜 링크](https://example.invalid/page), <https://example.invalid/other> 입니다."))

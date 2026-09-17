@@ -667,6 +667,7 @@ export default function InstructorPage() {
   const [reviewItem, setReviewItem] = useState<ReviewItem | null>(null);
   const [loading, setLoading] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
+  const [mobileView, setMobileView] = useState<"submission" | "analysis">("submission");
   const currentAssignment = assignments.find((assignment) => assignment.id === assignmentId) ?? fallbackAssignmentsWithDueDates[1];
   const currentSubmissionStatus = submissionStatus(submittedAt, currentAssignment.dueAt);
 
@@ -738,6 +739,7 @@ export default function InstructorPage() {
     setSubmittedContent("");
     setSubmittedAt(null);
     setAssignmentId(nextAssignmentId);
+    setMobileView("submission");
   };
 
   const chooseScore = (rubricId: RubricId, score: number) => {
@@ -793,7 +795,29 @@ export default function InstructorPage() {
         <a className="role-switch-option" href="/" onClick={(event) => { event.preventDefault(); window.location.assign("/"); }}>학생</a>
         <a className="role-switch-option active" href="/instructor" aria-current="page" onClick={(event) => { event.preventDefault(); window.location.assign("/instructor"); }}>교수자</a>
       </nav>
-      <aside className="instructor-sidebar" aria-label="교수자 과제와 학생 탐색">
+      <div className="mobile-view-tabs" role="tablist" aria-label="교수자 작업 영역">
+        <button
+          className="mobile-view-tab"
+          type="button"
+          role="tab"
+          aria-selected={mobileView === "submission"}
+          aria-controls="instructor-submission-pane"
+          onClick={() => setMobileView("submission")}
+        >
+          제출물
+        </button>
+        <button
+          className="mobile-view-tab"
+          type="button"
+          role="tab"
+          aria-selected={mobileView === "analysis"}
+          aria-controls="instructor-analysis-pane"
+          onClick={() => setMobileView("analysis")}
+        >
+          AI 분석 · 채점
+        </button>
+      </div>
+      <aside className={`instructor-sidebar mobile-pane ${mobileView === "analysis" ? "mobile-pane-hidden" : ""}`} aria-label="교수자 과제와 학생 탐색">
         <div>
           <div className="brand-lockup" aria-label="KUtrace">
             <img className="brand-lockup-logo" src="/ku-logo-horizontal.png" alt="고려대학교 로고" />
@@ -831,7 +855,7 @@ export default function InstructorPage() {
         </div>
       </aside>
 
-      <section className="instructor-writing-area" aria-labelledby="instructor-assignment-title">
+      <section id="instructor-submission-pane" className={`instructor-writing-area mobile-pane ${mobileView === "analysis" ? "mobile-pane-hidden" : ""}`} aria-labelledby="instructor-assignment-title" role="tabpanel">
         <h1 id="instructor-assignment-title">{currentAssignment.title}</h1>
         <article className="instructor-document" aria-label="학생 과제 원문">
           <header className="instructor-document-toolbar">
@@ -858,7 +882,7 @@ export default function InstructorPage() {
         </div>
       </section>
 
-      <section className="instructor-summary-panel" aria-labelledby="summary-title">
+      <section id="instructor-analysis-pane" className={`instructor-summary-panel mobile-pane ${mobileView === "submission" ? "mobile-pane-hidden" : ""}`} aria-labelledby="summary-title" role="tabpanel">
         <header className="instructor-summary-header">
           <h2 id="summary-title">AI 기반 학생 협업 요약</h2>
           <button className="instructor-help-button" type="button" aria-label="루브릭 도움말 열기" onClick={() => setHelpOpen(true)}>?</button>

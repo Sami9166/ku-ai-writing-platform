@@ -135,6 +135,7 @@ npm run dev
 | DB_PASSWORD | MySQL 비밀번호 |
 | API_PORT | Spring API 포트 |
 | GROQ_API_KEY | 학생 AI 대화용 Groq 키 |
+| GROQ_API_KEY_BACKUP | 기본 키 장애 시 사용할 예비 Groq 키 |
 | STUDENT_MODEL | 학생 AI 모델 |
 | GOOGLE_API_KEY | 교수자 분석용 Google AI Studio 키 |
 | PROFESSOR_PROVIDER | 교수자 분석 공급자(google 또는 groq) |

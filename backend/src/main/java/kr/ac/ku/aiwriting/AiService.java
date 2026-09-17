@@ -40,7 +40,7 @@ public class AiService {
     );
     private final ObjectMapper mapper;
     private final SearchService searchService;
-    private final String apiKey;
+    private final List<String> groqApiKeys;
     private final String googleApiKey;
     private final boolean searchEnabled;
     private final String studentModel;
@@ -52,6 +52,7 @@ public class AiService {
         ObjectMapper mapper,
         SearchService searchService,
         @Value("${ku.groq.api-key:}") String apiKey,
+        @Value("${ku.groq.backup-api-key:}") String backupApiKey,
         @Value("${ku.google.api-key:}") String googleApiKey,
         @Value("${ku.groq.dotenv-enabled:true}") boolean dotenvEnabled,
         @Value("${ku.search.enabled:true}") boolean searchEnabled,
@@ -61,7 +62,10 @@ public class AiService {
     ) {
         this.mapper = mapper;
         this.searchService = searchService;
-        this.apiKey = resolveSetting(apiKey, dotenvEnabled, "GROQ_API_KEY", "");
+        this.groqApiKeys = uniqueNonBlank(
+            resolveSetting(apiKey, dotenvEnabled, "GROQ_API_KEY", ""),
+            resolveSetting(backupApiKey, dotenvEnabled, "GROQ_API_KEY_BACKUP", "")
+        );
         this.googleApiKey = resolveSetting(googleApiKey, dotenvEnabled, "GOOGLE_API_KEY", "");
         this.searchEnabled = searchEnabled;
         this.studentModel = resolveSetting(studentModel, dotenvEnabled, "STUDENT_MODEL", "openai/gpt-oss-120b");
@@ -80,8 +84,9 @@ public class AiService {
     }
 
     public boolean enabled() { return studentEnabled() || rubricEnabled(); }
-    public boolean studentEnabled() { return !apiKey.isBlank(); }
-    public boolean rubricEnabled() { return googleRubricEnabled() ? !googleApiKey.isBlank() : !apiKey.isBlank(); }
+    public boolean studentEnabled() { return !groqApiKeys.isEmpty(); }
+    public boolean studentFallbackEnabled() { return groqApiKeys.size() > 1; }
+    public boolean rubricEnabled() { return googleRubricEnabled() ? !googleApiKey.isBlank() : !groqApiKeys.isEmpty(); }
     public String studentModel() { return studentModel; }
     public String rubricModel() { return rubricModel; }
 
@@ -334,50 +339,92 @@ public class AiService {
             log.warn("Groq generation skipped: no API key is configured");
             return Optional.empty();
         }
+
+        List<Map<String, Object>> messages = new ArrayList<>();
+        messages.add(Map.of("role", "system", "content", system));
+        for (Map<String, String> message : history) {
+            messages.add(Map.of(
+                "role", "ai".equals(message.get("role")) ? "assistant" : "user",
+                "content", message.getOrDefault("text", "")
+            ));
+        }
+        Map<String, Object> request = new LinkedHashMap<>();
+        request.put("model", model);
+        request.put("messages", messages);
+        request.put("stream", false);
+        if (!model.startsWith("groq/compound")) request.put("reasoning_effort", "low");
+        if (json) request.put("response_format", Map.of("type", "json_object"));
+
+        final String requestBody;
         try {
-            List<Map<String, Object>> messages = new ArrayList<>();
-            messages.add(Map.of("role", "system", "content", system));
-            for (Map<String, String> message : history) {
-                messages.add(Map.of(
-                    "role", "ai".equals(message.get("role")) ? "assistant" : "user",
-                    "content", message.getOrDefault("text", "")
-                ));
-            }
-            Map<String, Object> request = new LinkedHashMap<>();
-            request.put("model", model);
-            request.put("messages", messages);
-            request.put("stream", false);
-            if (!model.startsWith("groq/compound")) request.put("reasoning_effort", "low");
-            if (json) request.put("response_format", Map.of("type", "json_object"));
-            String endpoint = "https://api.groq.com/openai/v1/chat/completions";
-            HttpRequest httpRequest = HttpRequest.newBuilder(URI.create(endpoint))
-                .timeout(Duration.ofSeconds(45))
-                .header("Content-Type", "application/json")
-                .header("Authorization", "Bearer " + apiKey)
-                .POST(HttpRequest.BodyPublishers.ofString(mapper.writeValueAsString(request)))
-                .build();
-            HttpResponse<String> response = client.send(httpRequest, HttpResponse.BodyHandlers.ofString());
-            if (response.statusCode() < 200 || response.statusCode() >= 300) {
-                JsonNode error = mapper.readTree(response.body()).path("error");
-                String reason = safeReason(error.path("message").asText("no error message"));
-                String failedGeneration = error.path("failed_generation").asText("");
-                if (!failedGeneration.isBlank()) reason += " failed_generation=" + safeReason(failedGeneration);
-                log.warn("Groq generation failed: model={}, status={}, reason={}", model, response.statusCode(), reason);
-                return Optional.empty();
-            }
-            JsonNode root = mapper.readTree(response.body());
-            JsonNode choice = root.path("choices").path(0);
-            JsonNode message = choice.path("message");
-            String text = message.path("content").asText("").trim();
-            if (text.isEmpty()) {
-                log.warn("Groq generation returned no text: model={}, finishReason={}", model, choice.path("finish_reason").asText("unknown"));
-                return Optional.empty();
-            }
-            return Optional.of(new GeneratedResponse(text, List.of()));
+            requestBody = mapper.writeValueAsString(request);
         } catch (Exception exception) {
-            log.warn("Groq generation request failed: model={}, error={}", model, exception.getClass().getSimpleName());
+            log.warn("Groq request could not be prepared: model={}, error={}", model, exception.getClass().getSimpleName());
             return Optional.empty();
         }
+
+        String endpoint = "https://api.groq.com/openai/v1/chat/completions";
+        for (int keyIndex = 0; keyIndex < groqApiKeys.size(); keyIndex++) {
+            String keySlot = keySlot(keyIndex);
+            try {
+                HttpRequest httpRequest = HttpRequest.newBuilder(URI.create(endpoint))
+                    .timeout(Duration.ofSeconds(45))
+                    .header("Content-Type", "application/json")
+                    .header("Authorization", "Bearer " + groqApiKeys.get(keyIndex))
+                    .POST(HttpRequest.BodyPublishers.ofString(requestBody))
+                    .build();
+                HttpResponse<String> response = client.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+                if (response.statusCode() < 200 || response.statusCode() >= 300) {
+                    String reason = "no error message";
+                    try {
+                        JsonNode error = mapper.readTree(response.body()).path("error");
+                        reason = safeReason(error.path("message").asText(reason));
+                        String failedGeneration = error.path("failed_generation").asText("");
+                        if (!failedGeneration.isBlank()) reason += " failed_generation=" + safeReason(failedGeneration);
+                    } catch (Exception ignored) {
+                        // Keep the status-based failover decision even if the provider error is not JSON.
+                    }
+                    log.warn("Groq generation failed: model={}, keySlot={}, status={}, reason={}", model, keySlot, response.statusCode(), reason);
+                    if (!shouldTryFallback(response.statusCode()) || keyIndex + 1 >= groqApiKeys.size()) return Optional.empty();
+                    log.warn("Retrying Groq generation with keySlot={} after keySlot={} failure", keySlot(keyIndex + 1), keySlot);
+                    continue;
+                }
+                JsonNode root = mapper.readTree(response.body());
+                JsonNode choice = root.path("choices").path(0);
+                JsonNode message = choice.path("message");
+                String text = message.path("content").asText("").trim();
+                if (text.isEmpty()) {
+                    log.warn("Groq generation returned no text: model={}, keySlot={}, finishReason={}", model, keySlot, choice.path("finish_reason").asText("unknown"));
+                    if (keyIndex + 1 < groqApiKeys.size()) continue;
+                    return Optional.empty();
+                }
+                return Optional.of(new GeneratedResponse(text, List.of()));
+            } catch (Exception exception) {
+                if (exception instanceof InterruptedException) Thread.currentThread().interrupt();
+                log.warn("Groq generation request failed: model={}, keySlot={}, error={}", model, keySlot, exception.getClass().getSimpleName());
+                if (keyIndex + 1 >= groqApiKeys.size()) return Optional.empty();
+                log.warn("Retrying Groq generation with keySlot={} after keySlot={} request failure", keySlot(keyIndex + 1), keySlot);
+            }
+        }
+        return Optional.empty();
+    }
+
+    static boolean shouldTryFallback(int statusCode) {
+        return statusCode == 401 || statusCode == 403 || statusCode == 408 || statusCode == 425 || statusCode == 429 || statusCode >= 500;
+    }
+
+    static List<String> uniqueNonBlank(String... values) {
+        List<String> result = new ArrayList<>();
+        for (String value : values) {
+            if (value == null || value.isBlank()) continue;
+            String trimmed = value.trim();
+            if (!result.contains(trimmed)) result.add(trimmed);
+        }
+        return List.copyOf(result);
+    }
+
+    private static String keySlot(int index) {
+        return index == 0 ? "primary" : "backup-" + index;
     }
 
     private Optional<String> generateGoogle(String model, String system, String prompt) {

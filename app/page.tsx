@@ -85,6 +85,7 @@ export default function Home() {
   const [historyOpen, setHistoryOpen] = useState(false);
   const [guideOpen, setGuideOpen] = useState(false);
   const [pendingEventIds, setPendingEventIds] = useState<string[]>([]);
+  const [mobileView, setMobileView] = useState<"writing" | "ai">("writing");
   const verdictEventRequestRef = useRef<Promise<string | null> | null>(null);
   const currentAssignment = assignments.find((item) => item.id === assignmentId) ?? fallbackAssignments[1];
 
@@ -337,6 +338,7 @@ export default function Home() {
     verdictEventRequestRef.current = null;
     setMessages([]);
     setAssignmentId(nextAssignmentId);
+    setMobileView("writing");
   };
 
   const submitEssay = async () => {
@@ -386,7 +388,29 @@ export default function Home() {
         <a className="role-switch-option active" href="/" aria-current="page" onClick={(event) => { event.preventDefault(); window.location.assign("/"); }}>학생</a>
         <a className="role-switch-option" href="/instructor" onClick={(event) => { event.preventDefault(); window.location.assign("/instructor"); }}>교수자</a>
       </nav>
-      <aside className="sidebar" aria-label="과제 탐색">
+      <div className="mobile-view-tabs" role="tablist" aria-label="학생 작업 영역">
+        <button
+          className="mobile-view-tab"
+          type="button"
+          role="tab"
+          aria-selected={mobileView === "writing"}
+          aria-controls="student-writing-pane"
+          onClick={() => setMobileView("writing")}
+        >
+          작성
+        </button>
+        <button
+          className="mobile-view-tab"
+          type="button"
+          role="tab"
+          aria-selected={mobileView === "ai"}
+          aria-controls="student-ai-pane"
+          onClick={() => setMobileView("ai")}
+        >
+          AI 도우미
+        </button>
+      </div>
+      <aside className={`sidebar mobile-pane ${mobileView === "ai" ? "mobile-pane-hidden" : ""}`} aria-label="과제 탐색">
         <div>
           <div className="brand-lockup" aria-label="KUtrace">
             <img className="brand-lockup-logo" src="/ku-logo-horizontal.png" alt="고려대학교 로고" />
@@ -431,7 +455,7 @@ export default function Home() {
         </div>
       </aside>
 
-      <section className="writing-area" aria-labelledby="assignment-title">
+      <section id="student-writing-pane" className={`writing-area mobile-pane ${mobileView === "ai" ? "mobile-pane-hidden" : ""}`} aria-labelledby="assignment-title" role="tabpanel">
         <h1 id="assignment-title">{currentAssignment.title}</h1>
         <div className="document-shell">
           <div className="editor-toolbar" aria-label="텍스트 편집 도구">
@@ -470,7 +494,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="ai-panel" aria-labelledby="ai-panel-title">
+      <section id="student-ai-pane" className={`ai-panel mobile-pane ${mobileView === "writing" ? "mobile-pane-hidden" : ""}`} aria-labelledby="ai-panel-title" role="tabpanel">
         <header className="ai-header">
           <h2 id="ai-panel-title">AI 협업 도우미</h2>
           <button className="menu-button" type="button" aria-label="AI 대화 메뉴" aria-expanded={menuOpen} onClick={() => setMenuOpen((open) => !open)}>
