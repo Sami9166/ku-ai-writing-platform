@@ -53,7 +53,7 @@
 - Reduced motion and sensory considerations: 움직임을 최소화하고 색상만으로 상태를 전달하지 않습니다.
 
 ## Responsive behavior
-- Mobile focus model: on screens <=760px, student work switches between `작성` and `AI 도우미`, while instructor work switches between `제출물` and `AI 분석 · 채점`; desktop panes remain unchanged. Instructor mobile reading surfaces keep the roster, submission document, and analysis content in independent scroll containers.
+- Mobile focus model: on screens <=760px, student work switches between `작성` and `AI 도우미`, while instructor work switches between `제출물` and `AI 분석 · 채점`; desktop panes remain unchanged. Each mobile tab keeps only its focused work surface visible, with student editor/chat and instructor roster, submission document, and analysis content independently scrollable.
 - Mobile controls use touch-sized actions, safe-area padding, and a single focused scroll surface per tab.
 - Supported breakpoints/devices: 1120px 이하 2열, 760px 이하 세로 흐름
 - Layout adaptations: 데스크톱은 3열, 모바일은 원문과 요약을 순서대로 배치합니다.

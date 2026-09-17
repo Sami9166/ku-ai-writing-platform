@@ -493,6 +493,8 @@ button { cursor: pointer; }
   .editor-toolbar button { width: 44px; }
   .editor-toolbar .cite-tool { width: 58px; font-size: 11px; }
   .essay-editor { height: calc(100% - 48px); padding: 20px 10px 42px 4px; font-size: 16px; line-height: 1.7; }
+  .workspace .essay-editor,
+  .workspace .chat-scroll { overscroll-behavior-y: contain; }
 
   .editor-actions {
     position: sticky;
@@ -570,9 +572,9 @@ button { cursor: pointer; }
 @media (max-width: 760px) {
   /* Keep mobile reading surfaces independent so the roster never pushes the document out of view. */
   .instructor-workspace {
-    height: 100dvh;
-    min-height: 0;
-    overflow: hidden;
+    height: auto;
+    min-height: 100dvh;
+    overflow: visible;
     gap: 12px;
   }
 

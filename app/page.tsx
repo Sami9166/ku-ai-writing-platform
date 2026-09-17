@@ -89,6 +89,11 @@ export default function Home() {
   const verdictEventRequestRef = useRef<Promise<string | null> | null>(null);
   const currentAssignment = assignments.find((item) => item.id === assignmentId) ?? fallbackAssignments[1];
 
+  const switchMobileView = (view: "writing" | "ai") => {
+    setMobileView(view);
+    window.requestAnimationFrame(() => window.scrollTo({ top: 0, left: 0, behavior: "auto" }));
+  };
+
   useEffect(() => {
     const saved = window.localStorage.getItem("ku-ai-writing-draft");
     if (saved && editorRef.current) editorRef.current.innerHTML = saved;
@@ -395,7 +400,7 @@ export default function Home() {
           role="tab"
           aria-selected={mobileView === "writing"}
           aria-controls="student-writing-pane"
-          onClick={() => setMobileView("writing")}
+          onClick={() => switchMobileView("writing")}
         >
           작성
         </button>
@@ -405,7 +410,7 @@ export default function Home() {
           role="tab"
           aria-selected={mobileView === "ai"}
           aria-controls="student-ai-pane"
-          onClick={() => setMobileView("ai")}
+          onClick={() => switchMobileView("ai")}
         >
           AI 도우미
         </button>
