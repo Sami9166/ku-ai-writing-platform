@@ -10,9 +10,12 @@ spring:
 ku:
   assignment-id: 1
   groq:
-    api-key:
+    api-key: ""
+    backup-api-key: ""
+    student-model: ""
+    rubric-model: ""
     dotenv-enabled: false
   google:
-    api-key:
+    api-key: ""
   professor:
     provider: groq
