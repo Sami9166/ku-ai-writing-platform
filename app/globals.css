@@ -566,3 +566,53 @@ button { cursor: pointer; }
   .submit-modal button,
   .review-modal-actions button { min-width: 0; min-height: 48px; }
 }
+
+@media (max-width: 760px) {
+  /* Keep mobile reading surfaces independent so the roster never pushes the document out of view. */
+  .instructor-workspace {
+    height: 100dvh;
+    min-height: 0;
+    overflow: hidden;
+    gap: 12px;
+  }
+
+  .instructor-workspace .mobile-view-tabs {
+    position: relative;
+    top: auto;
+    flex: 0 0 auto;
+    margin-bottom: 0;
+  }
+
+  .instructor-workspace .mobile-pane { min-height: 0; }
+
+  .instructor-workspace .instructor-sidebar {
+    flex: 0 0 min(280px, 32dvh);
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-color: #c7c7c7 transparent;
+    scrollbar-width: thin;
+  }
+
+  .instructor-workspace .instructor-writing-area {
+    min-height: 0;
+    flex: 1 1 auto;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .instructor-workspace .instructor-writing-area h1,
+  .instructor-workspace .submission-meta { flex: 0 0 auto; }
+
+  .instructor-workspace .instructor-document {
+    height: auto;
+    min-height: 0;
+    flex: 1 1 auto;
+  }
+
+  .instructor-workspace .instructor-summary-panel {
+    height: auto;
+    min-height: 0;
+    flex: 1 1 auto;
+  }
+}
