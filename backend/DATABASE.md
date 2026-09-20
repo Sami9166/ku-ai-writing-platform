@@ -1,6 +1,6 @@
-# MySQL 데이터베이스 설계
+# MySQL Database Design
 
-## 설계 원칙
+## Design Principles
 
 1. 학생의 원본 행동 기록은 수정하지 않고 시간순으로 누적합니다.
 2. 임시 저장, 최종 제출, 루브릭 평가는 새 행을 추가해 이력을 남깁니다.
@@ -10,7 +10,7 @@
 6. 대화 원문은 계속 보존하고, AI에게 전달할 이전 맥락은 별도 요약으로 갱신합니다.
 7. 루브릭 스냅샷은 원자료가 바뀔 때만 다시 계산해, 교수자 조회만으로 AI 비용이 발생하지 않게 합니다.
 
-## 관계도
+## Entity Relationship Diagram
 
 ```mermaid
 erDiagram
@@ -36,7 +36,7 @@ erDiagram
     STUDENTS ||--o{ REVIEW_RESOLUTIONS : resolved
 ```
 
-## 테이블별 책임
+## Table Responsibilities
 
 ### `courses`
 
@@ -106,7 +106,7 @@ AI 답변에 대한 학생의 후속 행동을 이벤트로 누적합니다.
 
 AI가 애매하다고 판단한 루브릭 근거에 대해 교수가 `fulfilled` 또는 `not_fulfilled`로 확정한 이력을 누적합니다. 동일한 `review_id`가 여러 번 확정되면 가장 최근 행이 현재 판단입니다.
 
-## 마이그레이션
+## Migrations
 
 - `V1__create_schema.sql`: 테이블, 외래 키, 검사 제약, 조회 인덱스
 - `V2__seed_demo_data.sql`: 화면 확인용 과제, 학생 10명과 기준 학생 기록
@@ -118,6 +118,6 @@ AI가 애매하다고 판단한 루브릭 근거에 대해 교수가 `fulfilled`
 
 Spring 시작 시 Flyway가 `flyway_schema_history`를 확인하고 적용하지 않은 버전만 순서대로 실행합니다. 이미 적용한 SQL 파일은 수정하지 않고, 변경이 필요하면 `V3__...sql`처럼 새 마이그레이션을 추가해야 합니다.
 
-## 향후 Azure 연결
+## Future Azure Connection
 
 Azure Database for MySQL을 만들면 코드 변경 없이 `DB_URL`, `DB_USERNAME`, `DB_PASSWORD`만 교체할 수 있습니다. Azure 연결 시에는 JDBC URL에서 TLS를 활성화하고 비밀번호를 소스 코드나 `.env`에 커밋하지 않아야 합니다.
