@@ -780,7 +780,7 @@ export default function InstructorPage() {
     const evaluation = result?.evaluation;
     if (evaluation?.rubrics) {
       setRubricRates(rubrics.map((rubric) => ({ ...rubric, ...(evaluation.rubrics?.[rubric.id] ?? {}) })));
-      setToast(evaluation.mode === "groq" || evaluation.mode === "gemini" ? "Groq로 루브릭 반영률을 갱신했습니다." : "Groq API 키가 없어 규칙 기반 분석으로 갱신했습니다.");
+      setToast(evaluation.mode === "groq" || evaluation.mode === "gemini" ? `${evaluation.mode === "gemini" ? "Gemini" : "Groq"}로 루브릭 반영률을 갱신했습니다.` : "API 키가 없어 규칙 기반 분석으로 갱신했습니다.");
     } else {
       setToast("분석 결과를 불러오지 못했습니다. API 연결을 확인해주세요.");
     }

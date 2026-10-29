@@ -13,6 +13,7 @@ backend/target/
 !.env.example
 *.pem
 .openai/
+.omc
 
 # Logs and tool state
 *.log

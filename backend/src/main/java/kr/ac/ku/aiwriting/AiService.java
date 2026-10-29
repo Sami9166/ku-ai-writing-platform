@@ -1,5 +1,6 @@
 package kr.ac.ku.aiwriting;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
@@ -28,15 +29,19 @@ public class AiService {
     private static final Logger log = LoggerFactory.getLogger(AiService.class);
     private static final Pattern URL_PATTERN = Pattern.compile("https?://[^\\s)\\]}>\\\"]+");
     private static final Pattern MARKDOWN_LINK_PATTERN = Pattern.compile("\\[([^\\]\r\n]+)]\\((https?://[^\\s)]+)\\)");
-    private static final Pattern SEARCH_REQUEST_PATTERN = Pattern.compile(
-        "\\[\\[SEARCH_NEEDED\\s*:\\s*(.+?)]]",
-        Pattern.CASE_INSENSITIVE | Pattern.DOTALL
-    );
-    private static final Pattern SEARCH_LINE_PATTERN = Pattern.compile(
-        "(?im)^\\s*SEARCH\\s*:\\s*([^\\r\\n]+)"
-    );
-    private static final Pattern NO_SEARCH_LINE_PATTERN = Pattern.compile(
-        "(?im)^\\s*NO_SEARCH\\s*$"
+    private static final String SEARCH_TOOL_NAME = "web_search";
+    private static final int MAX_TOOL_TURNS = 3;
+    private static final Map<String, Object> SEARCH_TOOL_SCHEMA = Map.of(
+        "type", "function",
+        "function", Map.of(
+            "name", SEARCH_TOOL_NAME,
+            "description", "최신 현황·통계·정책·기관 정보처럼 변할 수 있는 사실이나 출처가 필요할 때 웹을 검색한다.",
+            "parameters", Map.of(
+                "type", "object",
+                "properties", Map.of("query", Map.of("type", "string", "description", "한국어 검색어")),
+                "required", List.of("query")
+            )
+        )
     );
     private final ObjectMapper mapper;
     private final SearchService searchService;
@@ -89,6 +94,7 @@ public class AiService {
     public boolean rubricEnabled() { return googleRubricEnabled() ? !googleApiKey.isBlank() : !groqApiKeys.isEmpty(); }
     public String studentModel() { return studentModel; }
     public String rubricModel() { return rubricModel; }
+    public String rubricProvider() { return googleRubricEnabled() ? "gemini" : "groq"; }
 
     public Optional<ChatReply> chat(List<Map<String, String>> history, String conversationSummary) {
         String rememberedContext = conversationSummary == null || conversationSummary.isBlank() ? "" : """
@@ -106,123 +112,66 @@ public class AiService {
             3. 과제와 관련된 사실·사례·출처는 검색 근거가 있을 때만 단정적으로 말합니다. 검색 근거의 URL은 직접 적지 않습니다.
             4. 학생의 글을 통째로 대신 작성하거나 교수자 점수·루브릭 점수를 제시하지 않습니다.
             5. '주장·근거·검증 방법'을 기계적으로 나누지 말고, 학생이 바로 다음 행동을 결정할 수 있도록 친절하게 답합니다.
-            """ + rememberedContext;
-        /*
-        String searchDecisionInstructions = studentInstructions + """
-
-            [검색 사용 판단]
-            먼저 학생의 최신 질문에 답하려면 외부 검색이 실제로 필요한지 스스로 판단하세요.
-            최신 현황·통계·정책·기관 정보처럼 변경될 수 있는 사실, 사용자가 요청한 출처·링크·사실 확인은 검색이 필요합니다.
-            개념 설명, 아이디어 구체화, 문장 수정, 글쓰기 조언처럼 현재 대화만으로 답할 수 있는 질문은 검색하지 않습니다.
-
-            검색이 필요하면 다른 설명 없이 아래 형식 한 줄만 반환하세요.
-            [[SEARCH_NEEDED: 검색에 사용할 구체적인 검색어]]
-
-            검색이 필요하지 않으면 위 표시를 쓰지 말고 학생에게 보여줄 최종 답변을 바로 작성하세요.
             """;
+        boolean searchAvailable = searchEnabled && searchService.enabled();
+        String searchToolInstructions = searchAvailable ? """
 
-        String structuredSearchDecisionInstructions = studentInstructions + """
-
-            [SEARCH DECISION JSON CONTRACT]
-            Decide whether the latest student question needs external search before answering.
-            Search is required for changing facts, current institutional information, statistics,
-            policies, or an explicit request for sources or links. Search is not required for
-            explanations, brainstorming, writing advice, or sentence editing.
-            Return exactly one JSON object and nothing else. Do not use Markdown, code fences,
-            function calls, or tool calls. The object must have exactly these fields:
-            {"needsSearch":false,"query":"","answer":"student-facing final answer in natural Korean"}
-            If search is required, set needsSearch to true, put a concise Korean search query
-            in query, and set answer to an empty string. If search is not required, set
-            needsSearch to false, leave query empty, and put the complete answer in answer.
-            """;
-        */
-        String routingInstructions = """
-            You are a search-routing classifier for a Korean student writing assistant.
-            Inspect the latest user message in the conversation and decide whether an external
-            web search is necessary before answering it. Search only for current or changeable
-            facts, institutional information, statistics, policies, or an explicit request for
-            sources or links. Do not search for general explanations, brainstorming, writing
-            advice, or sentence editing.
-            Return exactly one line:
-            SEARCH: concise Korean query
-            or
-            NO_SEARCH
-            Use SEARCH only when a current or changeable fact, institutional information,
-            statistic, policy, or explicit request for sources/links requires a lookup.
-            Use NO_SEARCH for explanations, brainstorming, writing advice, and sentence editing.
-            Never answer the user, never emit Markdown, and never perform the lookup yourself.
-            """;
-        Optional<GeneratedResponse> firstResponse = generateResponse(studentModel, routingInstructions, history, false);
-        if (firstResponse.isEmpty()) return Optional.empty();
-
-        SearchDecision decision = parseSearchDecision(firstResponse.get().text());
-        if (!decision.needsSearch()) {
-            Optional<GeneratedResponse> answerResponse = generateResponse(studentModel, studentInstructions, history, false);
-            if (answerResponse.isPresent()) {
-                return Optional.of(new ChatReply(sanitizeAnswer(answerResponse.get().text()), List.of()));
-            }
-            if (!decision.answer().isBlank()) {
-                return Optional.of(new ChatReply(sanitizeAnswer(decision.answer()), List.of()));
-            }
-            return Optional.empty();
-        }
-        String requestedQuery = decision.query();
-        if (requestedQuery.isBlank()) return Optional.empty();
-        if (!searchEnabled) {
-            return Optional.of(new ChatReply(
-                "이 질문은 최신 자료 확인이 필요하지만 현재 검색 기능이 꺼져 있어요. 확인되지 않은 내용을 추측하지 않고, 검색 기능이 켜지면 다시 확인해 드릴게요.",
-                List.of()
-            ));
-        }
-
-        SearchContext search = searchContext(requestedQuery);
-        if (search.status() == SearchService.Status.UNAVAILABLE) {
-            return Optional.of(new ChatReply(
-                "검색 연결이 잠시 끊겨 최신 정보를 확인하지 못했어요. 확인되지 않은 내용이나 링크를 만들지 않고, 잠시 후 다시 시도해 주세요.",
-                List.of()
-            ));
-        }
-        if (search.status() == SearchService.Status.NO_RESULTS) {
-            return Optional.of(new ChatReply(
-                "검색 결과가 없어요. 질문의 범위나 시점을 조금 더 구체적으로 입력해 다시 시도해 주세요.",
-                List.of()
-            ));
-        }
-
-        return generateResponse(studentModel,
-            studentInstructions + search.instructions() + """
-
-                검색 필요 여부 판단은 이미 끝났습니다. 검색 요청 표시를 다시 출력하지 말고,
-                제공된 검색 결과를 근거로 학생에게 보여줄 최종 답변만 자연스럽게 작성하세요.
-                """,
+            [검색 도구]
+            최신 현황·통계·정책·기관 정보처럼 변할 수 있는 사실이나 학생이 요청한 출처는 web_search 도구로 확인한 뒤 답합니다.
+            개념 설명, 아이디어 구체화, 문장 수정, 글쓰기 조언은 도구를 부르지 않고 바로 답합니다.
+            검색 결과에 없는 사실은 추측하지 말고, 확인하지 못했다고 알립니다.
+            """ : "";
+        return generateResponse(
+            studentModel,
+            studentInstructions + searchToolInstructions + rememberedContext,
             history,
-            false
-        ).map(response -> new ChatReply(
-            sanitizeAnswer(response.text()),
-            mergeSources(List.of(), search.sources())
-        ));
+            false,
+            searchAvailable
+        ).map(response -> new ChatReply(sanitizeAnswer(response.text()), response.sources()));
     }
 
-    private SearchContext searchContext(String query) {
-        SearchService.SearchOutcome outcome = searchService.searchDetailed(query);
-        List<SearchService.Result> results = outcome.results();
-        if (outcome.status() != SearchService.Status.SUCCESS) {
-            return new SearchContext(outcome.status(), "", List.of());
+    /** Runs one web_search tool call and appends its sources, returning the tool message the model reads next. */
+    private Map<String, Object> toolResult(JsonNode call, List<Source> sources) {
+        String id = call.path("id").asText("");
+        if (!SEARCH_TOOL_NAME.equals(call.path("function").path("name").asText(""))) {
+            return Map.of("role", "tool", "tool_call_id", id,
+                "content", "알 수 없는 도구입니다. " + SEARCH_TOOL_NAME + "만 호출할 수 있습니다.");
         }
-        StringBuilder instructions = new StringBuilder("""
-
-            [검색 결과]
-            아래 검색 결과만 외부 사실의 근거로 사용하세요. 답변 본문에는 URL, Markdown 링크, 꺾쇠 링크(<https://...>)를 직접 작성하지 마세요.
-            사용할 출처는 화면의 별도 참고 링크 영역에서 표시합니다. 검색 결과에 없는 사실은 추측하지 마세요.
-            """);
-        List<Source> sources = new ArrayList<>();
-        for (SearchService.Result result : results) {
-            instructions.append("\n- ").append(result.title())
+        String query = searchToolQuery(mapper, call.path("function").path("arguments").asText(""));
+        if (query.isBlank()) {
+            return Map.of("role", "tool", "tool_call_id", id,
+                "content", "검색어가 비어 있습니다. 구체적인 검색어로 다시 호출하세요.");
+        }
+        SearchService.SearchOutcome outcome = searchService.searchDetailed(query);
+        if (outcome.status() == SearchService.Status.UNAVAILABLE) {
+            return Map.of("role", "tool", "tool_call_id", id,
+                "content", "검색 서비스에 연결하지 못했습니다. 추측하지 말고 지금은 확인할 수 없다고 답하세요.");
+        }
+        if (outcome.status() == SearchService.Status.NO_RESULTS) {
+            return Map.of("role", "tool", "tool_call_id", id,
+                "content", "검색 결과가 없습니다. 검색어를 바꿔 한 번 더 시도하거나, 확인하지 못했다고 답하세요.");
+        }
+        StringBuilder content = new StringBuilder(
+            "아래 검색 결과만 외부 사실의 근거로 사용하세요. 답변 본문에는 URL, Markdown 링크, 꺾쇠 링크(<https://...>)를 직접 쓰지 마세요. "
+                + "사용할 출처는 화면의 별도 참고 링크 영역에서 표시합니다.");
+        for (SearchService.Result result : outcome.results()) {
+            content.append("\n- ").append(result.title())
                 .append("\n  URL: ").append(result.url())
                 .append("\n  요약: ").append(result.snippet());
             sources.add(new Source(result.title(), result.url()));
         }
-        return new SearchContext(SearchService.Status.SUCCESS, instructions.toString(), mergeSources(List.of(), sources));
+        return Map.of("role", "tool", "tool_call_id", id, "content", content.toString());
+    }
+
+    /** Tool arguments arrive as a JSON string the model wrote, so malformed input yields no query instead of failing. */
+    static String searchToolQuery(ObjectMapper mapper, String arguments) {
+        try {
+            String query = mapper.readTree(arguments == null || arguments.isBlank() ? "{}" : arguments)
+                .path("query").asText("").replaceAll("\\s+", " ").trim();
+            return query.length() <= 300 ? query : query.substring(0, 300);
+        } catch (Exception exception) {
+            return "";
+        }
     }
 
     private List<Source> mergeSources(List<Source> first, List<Source> second) {
@@ -233,51 +182,6 @@ public class AiService {
             if (unique.size() >= 5) break;
         }
         return unique.values().stream().limit(5).toList();
-    }
-
-    static Optional<String> searchQuery(String responseText) {
-        var matcher = SEARCH_REQUEST_PATTERN.matcher(responseText == null ? "" : responseText.trim());
-        if (!matcher.find()) return Optional.empty();
-        String query = matcher.group(1).replaceAll("\\s+", " ").trim();
-        if (query.isBlank()) return Optional.empty();
-        return Optional.of(query.length() <= 300 ? query : query.substring(0, 300));
-    }
-
-    /**
-     * Parses the model's search-routing contract. The legacy marker remains supported so
-     * responses from an older running process do not get mistaken for a normal answer.
-     */
-    static SearchDecision parseSearchDecision(String responseText) {
-        String raw = responseText == null ? "" : responseText.trim();
-        var searchLine = SEARCH_LINE_PATTERN.matcher(raw);
-        if (searchLine.find()) {
-            String query = searchLine.group(1).replaceAll("\\s+", " ").trim();
-            if (query.length() > 300) query = query.substring(0, 300);
-            if (!query.isBlank()) return new SearchDecision(true, query, "");
-        }
-        if (NO_SEARCH_LINE_PATTERN.matcher(raw).find()) {
-            return new SearchDecision(false, "", "");
-        }
-        if (!raw.isBlank()) {
-            try {
-                JsonNode root = new ObjectMapper().readTree(raw);
-                if (root != null && root.isObject() &&
-                    (root.has("needsSearch") || root.has("query") || root.has("answer"))) {
-                    boolean needsSearch = root.path("needsSearch").asBoolean(false);
-                    String query = root.path("query").asText("").replaceAll("\\s+", " ").trim();
-                    if (query.length() > 300) query = query.substring(0, 300);
-                    String answer = root.path("answer").asText("").trim();
-                    if (needsSearch && query.isBlank()) return new SearchDecision(false, "", answer);
-                    return new SearchDecision(needsSearch, query, answer);
-                }
-            } catch (Exception ignored) {
-                // Fall through to the legacy marker parser and then treat the text as an answer.
-            }
-        }
-        Optional<String> legacyQuery = searchQuery(raw);
-        return legacyQuery
-            .map(query -> new SearchDecision(true, query, ""))
-            .orElseGet(() -> new SearchDecision(false, "", raw));
     }
 
     public Optional<String> summarizeConversation(String previousSummary, List<Map<String, String>> messages) {
@@ -331,10 +235,12 @@ public class AiService {
     }
 
     private Optional<String> generate(String model, String system, List<Map<String, String>> history, boolean json) {
-        return generateResponse(model, system, history, json).map(GeneratedResponse::text);
+        return generateResponse(model, system, history, json, false).map(GeneratedResponse::text);
     }
 
-    private Optional<GeneratedResponse> generateResponse(String model, String system, List<Map<String, String>> history, boolean json) {
+    private Optional<GeneratedResponse> generateResponse(
+        String model, String system, List<Map<String, String>> history, boolean json, boolean searchTool
+    ) {
         if (!studentEnabled()) {
             log.warn("Groq generation skipped: no API key is configured");
             return Optional.empty();
@@ -348,12 +254,37 @@ public class AiService {
                 "content", message.getOrDefault("text", "")
             ));
         }
+
+        List<Source> sources = new ArrayList<>();
+        for (int turn = 0; turn <= MAX_TOOL_TURNS; turn++) {
+            // The last turn withholds the tool so the model has to answer instead of searching forever.
+            Optional<JsonNode> choice = requestCompletion(model, messages, json, searchTool && turn < MAX_TOOL_TURNS);
+            if (choice.isEmpty()) return Optional.empty();
+            JsonNode message = choice.get().path("message");
+            JsonNode toolCalls = message.path("tool_calls");
+            if (!toolCalls.isArray() || toolCalls.isEmpty()) {
+                return Optional.of(new GeneratedResponse(
+                    message.path("content").asText("").trim(),
+                    mergeSources(List.of(), sources)
+                ));
+            }
+            messages.add(mapper.convertValue(message, new TypeReference<Map<String, Object>>() { }));
+            for (JsonNode call : toolCalls) messages.add(toolResult(call, sources));
+        }
+        return Optional.empty();
+    }
+
+    private Optional<JsonNode> requestCompletion(String model, List<Map<String, Object>> messages, boolean json, boolean searchTool) {
         Map<String, Object> request = new LinkedHashMap<>();
         request.put("model", model);
         request.put("messages", messages);
         request.put("stream", false);
         if (!model.startsWith("groq/compound")) request.put("reasoning_effort", "low");
         if (json) request.put("response_format", Map.of("type", "json_object"));
+        if (searchTool) {
+            request.put("tools", List.of(SEARCH_TOOL_SCHEMA));
+            request.put("tool_choice", "auto");
+        }
 
         final String requestBody;
         try {
@@ -392,13 +323,13 @@ public class AiService {
                 JsonNode root = mapper.readTree(response.body());
                 JsonNode choice = root.path("choices").path(0);
                 JsonNode message = choice.path("message");
-                String text = message.path("content").asText("").trim();
-                if (text.isEmpty()) {
+                boolean requestedTool = message.path("tool_calls").isArray() && !message.path("tool_calls").isEmpty();
+                if (!requestedTool && message.path("content").asText("").trim().isEmpty()) {
                     log.warn("Groq generation returned no text: model={}, keySlot={}, finishReason={}", model, keySlot, choice.path("finish_reason").asText("unknown"));
                     if (keyIndex + 1 < groqApiKeys.size()) continue;
                     return Optional.empty();
                 }
-                return Optional.of(new GeneratedResponse(text, List.of()));
+                return Optional.of(choice);
             } catch (Exception exception) {
                 if (exception instanceof InterruptedException) Thread.currentThread().interrupt();
                 log.warn("Groq generation request failed: model={}, keySlot={}, error={}", model, keySlot, exception.getClass().getSimpleName());
@@ -512,7 +443,5 @@ public class AiService {
 
     public record Source(String title, String url) { }
     public record ChatReply(String text, List<Source> sources) { }
-    record SearchDecision(boolean needsSearch, String query, String answer) { }
     private record GeneratedResponse(String text, List<Source> sources) { }
-    private record SearchContext(SearchService.Status status, String instructions, List<Source> sources) { }
 }

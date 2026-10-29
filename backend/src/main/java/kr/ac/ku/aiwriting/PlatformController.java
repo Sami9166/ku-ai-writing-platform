@@ -1,6 +1,7 @@
 package kr.ac.ku.aiwriting;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -46,6 +47,8 @@ public class PlatformController {
     private static final int MAX_REMOTE_SUMMARY_CHARACTERS = 6_000;
     private static final int EVALUATION_RECENT_MESSAGES = 8;
     private static final int EVALUATION_RECENT_EVENTS = 6;
+    /** Shorter quotes match the record by accident, so they are not accepted as evidence. */
+    private static final int MIN_EVIDENCE_CHARACTERS = 10;
     private static final int MAX_EVALUATION_SUMMARY_CHARACTERS = 1_000;
     private static final int MAX_EVALUATION_CONVERSATION_CHARACTERS = 2_500;
     private static final int MAX_EVALUATION_SUBMISSION_CHARACTERS = 4_000;
@@ -265,8 +268,10 @@ public class PlatformController {
         int sourceVersion = store.rubricSourceVersion(assignmentId, studentId);
         Map<String, Object> local = evaluateLocal(assignmentId, studentId);
         if (useAi && ai.rubricEnabled()) {
-            String prompt = evaluationPrompt(assignmentId, studentId);
-            ai.rubric(prompt).map(this::parseJson).filter(value -> !value.isEmpty()).ifPresent(parsed -> mergeAiResult(local, parsed));
+            Map<String, Object> records = evaluationRecords(assignmentId, studentId);
+            String grounding = groundingText(records);
+            ai.rubric(evaluationPrompt(records)).map(this::parseJson).filter(value -> !value.isEmpty())
+                .ifPresent(parsed -> mergeAiResult(local, parsed, grounding));
         }
         local.put("sourceVersion", sourceVersion);
         local.put("generatedAt", Instant.now().toString());
@@ -330,7 +335,7 @@ public class PlatformController {
         return mapOf("id", id, "rubricId", rubricId, "status", "needs_review", "evidence", evidence, "reason", reason);
     }
 
-    private void mergeAiResult(Map<String, Object> local, Map<String, Object> parsed) {
+    private void mergeAiResult(Map<String, Object> local, Map<String, Object> parsed, String grounding) {
         Map<String, Object> parsedRubrics = asMap(parsed.get("rubrics"));
         if (parsedRubrics.isEmpty()) return;
         Map<String, Object> rubrics = asMap(local.get("rubrics"));
@@ -341,18 +346,68 @@ public class PlatformController {
             int fulfilled = integer(candidate.get("fulfilledCount"), -1);
             if (fulfilled < 0 || denominator < 0 || fulfilled > denominator) continue;
             Map<String, Object> current = asMap(rubrics.get(id));
+            List<Object> evidence = groundedEvidence(grounding, candidate.get("evidence"));
+            // A positive count whose quoted evidence is nowhere in the record cannot be checked by the
+            // instructor, so the rule-based count stands and the item is flagged instead of overwritten.
+            if (fulfilled > 0 && evidence.isEmpty()) {
+                current.put("reviewItems", withUngroundedNotice(current, id));
+                rubrics.put(id, current);
+                continue;
+            }
             current.put("fulfilledCount", fulfilled);
             current.put("denominator", denominator);
             current.put("rate", denominator == 0 ? 0 : Math.round(fulfilled * 100f / denominator));
-            if (candidate.get("evidence") instanceof List<?> evidence) current.put("evidence", evidence);
-            if (candidate.get("reviewItems") instanceof List<?> reviews) current.put("reviewItems", reviews);
+            if (candidate.get("evidence") instanceof List<?>) current.put("evidence", evidence);
+            if (candidate.get("reviewItems") instanceof List<?> reviews) {
+                current.put("reviewItems", groundedReviewItems(grounding, reviews));
+            }
             rubrics.put(id, current);
         }
-        local.put("mode", "groq");
+        local.put("mode", ai.rubricProvider());
         local.put("rubrics", rubrics);
     }
 
-    private String evaluationPrompt(long assignmentId, String studentId) {
+    /** Every text value the model was shown, so quoted evidence can be checked against the record. */
+    private String groundingText(Map<String, Object> records) {
+        StringBuilder collected = new StringBuilder();
+        collectText(mapper.valueToTree(records), collected);
+        return normalizeForGrounding(collected.toString());
+    }
+
+    private void collectText(JsonNode node, StringBuilder collected) {
+        if (node.isTextual()) collected.append(node.asText()).append('\n');
+        else for (JsonNode child : node) collectText(child, collected);
+    }
+
+    private List<Object> groundedEvidence(String grounding, Object raw) {
+        if (!(raw instanceof List<?> items)) return List.of();
+        return items.stream().filter(item -> grounded(grounding, item)).map(item -> (Object) item).toList();
+    }
+
+    private List<Map<String, Object>> groundedReviewItems(String grounding, Object raw) {
+        if (!(raw instanceof List<?> items)) return List.of();
+        return items.stream().map(this::asMap).filter(item -> grounded(grounding, item.get("evidence"))).toList();
+    }
+
+    private List<Map<String, Object>> withUngroundedNotice(Map<String, Object> current, String id) {
+        List<Map<String, Object>> reviews = new ArrayList<>();
+        if (current.get("reviewItems") instanceof List<?> existing) existing.forEach(item -> reviews.add(asMap(item)));
+        reviews.add(reviewItem(id + "-ungrounded", id, "",
+            "AI가 제시한 근거를 학생 기록에서 찾지 못해 이 항목의 AI 분석 결과를 반영하지 않았습니다."));
+        return reviews;
+    }
+
+    /** Evidence must be a verbatim excerpt, so a whitespace-insensitive containment check is enough. */
+    static boolean grounded(String grounding, Object evidence) {
+        String compact = normalizeForGrounding(evidence == null ? "" : String.valueOf(evidence));
+        return compact.length() >= MIN_EVIDENCE_CHARACTERS && grounding.contains(compact);
+    }
+
+    static String normalizeForGrounding(String value) {
+        return value.replaceAll("\\s+", "");
+    }
+
+    private String evaluationPrompt(Map<String, Object> records) {
         try {
             return """
                 다음 학생 기록을 분석해 JSON 객체만 반환하세요. 교수자 점수·예상 점수·총점은 절대 만들지 마세요.
@@ -371,6 +426,10 @@ public class PlatformController {
                 fulfilledCount는 0 이상 denominator 이하의 정수여야 합니다. 근거가 없으면 0으로 두고,
                 모호한 항목은 충족으로 추정하지 말고 needs_review로 남깁니다.
 
+                evidence와 reviewItems의 evidence는 아래 학생 기록에서 **그대로 복사한 10자 이상의 연속된 구절**이어야
+                합니다. 요약, 바꿔 쓰기, 설명 문장은 쓰지 마세요. 기록에 그대로 있는 구절을 인용할 수 없으면 해당 근거를
+                넣지 말고 fulfilledCount를 0으로 두세요. 기록에 없는 구절은 검증에 실패해 결과에서 제외됩니다.
+
                 판정 규칙:
                 - initiative: 전체 AI 답변 수가 denominator입니다. 학생이 AI 답변 뒤에 자신의 목적·조건을 반영해
                   추가 질문, 특정 부분 수정 요청, 방향 전환, 답변 기반 후속 질문 또는 반론을 한 횟수만 셉니다.
@@ -385,7 +444,7 @@ public class PlatformController {
                   denominator는 항상 3입니다.
 
                 학생 기록:
-                """ + mapper.writeValueAsString(evaluationRecords(assignmentId, studentId));
+                """ + mapper.writeValueAsString(records);
         } catch (Exception error) { return "학생 기록을 분석하세요."; }
     }
 

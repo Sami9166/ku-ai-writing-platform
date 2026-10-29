@@ -1,5 +1,6 @@
 package kr.ac.ku.aiwriting;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -40,53 +41,16 @@ class AiServiceTest {
     }
 
     @Test
-    void parsesTheAiSearchDecisionProtocol() {
-        assertThat(AiService.searchQuery("[[SEARCH_NEEDED: 고려대학교 AI 교육 최신 현황 공식 자료]]"))
-            .contains("고려대학교 AI 교육 최신 현황 공식 자료");
-        assertThat(AiService.searchQuery("검색이 필요합니다.\n[[SEARCH_NEEDED: 고려대학교 AI 교육 현황]]"))
-            .contains("고려대학교 AI 교육 현황");
-        assertThat(AiService.searchQuery("AI는 아이디어를 구체화하는 데 활용할 수 있어요."))
-            .isEmpty();
-        assertThat(AiService.searchQuery("[[SEARCH_NEEDED:   ]]"))
-            .isEmpty();
-    }
+    void readsTheSearchQueryFromToolCallArguments() {
+        ObjectMapper mapper = new ObjectMapper();
 
-    @Test
-    void parsesTheStructuredSearchDecisionProtocol() {
-        AiService.SearchDecision noSearch = AiService.parseSearchDecision(
-            "{\"needsSearch\":false,\"query\":\"\",\"answer\":\"AI는 요구사항 분석과 기능 설계를 도울 수 있어요.\"}"
-        );
-        assertThat(noSearch.needsSearch()).isFalse();
-        assertThat(noSearch.query()).isEmpty();
-        assertThat(noSearch.answer()).contains("요구사항 분석");
-
-        AiService.SearchDecision search = AiService.parseSearchDecision(
-            "{\"needsSearch\":true,\"query\":\"고려대학교 AI 교육 현황 공식 자료\",\"answer\":\"\"}"
-        );
-        assertThat(search.needsSearch()).isTrue();
-        assertThat(search.query()).contains("고려대학교 AI 교육 현황");
-        assertThat(search.answer()).isEmpty();
-    }
-
-    @Test
-    void keepsLegacySearchMarkerCompatible() {
-        AiService.SearchDecision decision = AiService.parseSearchDecision(
-            "[[SEARCH_NEEDED: 고려대학교 AI 교육 현황]]"
-        );
-        assertThat(decision.needsSearch()).isTrue();
-        assertThat(decision.query()).contains("고려대학교 AI 교육 현황");
-    }
-
-    @Test
-    void parsesPlainTextSearchRoutingProtocol() {
-        AiService.SearchDecision search = AiService.parseSearchDecision(
-            "SEARCH: 고려대학교 AI 교육 현황 공식 자료"
-        );
-        assertThat(search.needsSearch()).isTrue();
-        assertThat(search.query()).isEqualTo("고려대학교 AI 교육 현황 공식 자료");
-
-        AiService.SearchDecision noSearch = AiService.parseSearchDecision("NO_SEARCH");
-        assertThat(noSearch.needsSearch()).isFalse();
-        assertThat(noSearch.query()).isEmpty();
+        assertThat(AiService.searchToolQuery(mapper, "{\"query\":\" 고려대학교  AI 교육 현황 \"}"))
+            .isEqualTo("고려대학교 AI 교육 현황");
+        assertThat(AiService.searchToolQuery(mapper, "{\"query\":\"\"}")).isEmpty();
+        assertThat(AiService.searchToolQuery(mapper, "{}")).isEmpty();
+        assertThat(AiService.searchToolQuery(mapper, "")).isEmpty();
+        assertThat(AiService.searchToolQuery(mapper, "검색해 주세요")).isEmpty();
+        assertThat(AiService.searchToolQuery(mapper, "{\"query\":\"" + "가".repeat(400) + "\"}"))
+            .hasSize(300);
     }
 }
